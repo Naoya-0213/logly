@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-primary-50: #EEF2FF;
+  --color-primary-100: #E0E7FF;
+  --color-primary-200: #C7D2FE;
+  --color-primary-400: #818CF8;
+  --color-primary-500: #6366F1;
+  --color-primary-600: #4F46E5;
+  --color-primary-700: #4338CA;
+  --color-accent-400: #34D399;
+  --color-accent-500: #10B981;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: #F8F9FF;
+    color: #111827;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .card {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid #F3F4F6;
+    padding: 1rem;
+  }
+  .btn-primary {
+    background-color: #6366F1;
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+  }
+  .btn-primary:hover {
+    background-color: #4F46E5;
+  }
+  .btn-secondary {
+    background-color: white;
+    color: #374151;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    transition: background-color 0.2s;
+    cursor: pointer;
+  }
+  .btn-secondary:hover {
+    background-color: #F9FAFB;
+  }
+  .input-field {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.2s;
+    background-color: white;
+  }
+  .input-field:focus {
+    border-color: #6366F1;
+    box-shadow: 0 0 0 3px #EEF2FF;
+  }
+  .label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 4px;
+    display: block;
+  }
 }

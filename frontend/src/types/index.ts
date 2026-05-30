@@ -1,0 +1,32 @@
+export type User = {
+  id: string
+  email: string
+  display_name: string | null
+  created_at: string
+}
+
+export type Category = {
+  id: number
+  user_id: string
+  name: string
+  color: string
+  created_at: string
+}
+
+export type StudyRecord = {
+  id: number
+  user_id: string
+  category_id: number | null
+  study_date: string
+  duration_minutes: number
+  content: string | null
+  created_at: string
+  categories?: Category
+}
+
+export type StudyStats = {
+  total_minutes: number
+  this_month_minutes: number
+  today_minutes: number
+  streak_days: number
+}
