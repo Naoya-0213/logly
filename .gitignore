@@ -1,0 +1,10 @@
+# dependencies
+frontend/node_modules
+frontend/.next
+
+# environment variables
+frontend/.env.local
+frontend/.env
+
+# misc
+.DS_Store
