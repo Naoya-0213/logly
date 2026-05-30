@@ -1,45 +1,55 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase'
+import { createClient } from "@/lib/supabase";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const schema = z.object({
-  email: z.string().email('正しいメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは8文字以上で入力してください'),
-})
+  email: z.string().email("正しいメールアドレスを入力してください"),
+  password: z.string().min(8, "パスワードは8文字以上で入力してください"),
+});
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const router = useRouter()
-  const supabase = createClient()
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const supabase = createClient();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
-  })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = async (data: FormData) => {
-    setLoading(true)
-    setError(null)
-    const { error } = await supabase.auth.signInWithPassword({
+    setLoading(true);
+    setError(null);
+
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
-    })
+    });
+
+    console.log("authData:", authData);
+    console.log("error:", error);
+
     if (error) {
-      setError('メールアドレスまたはパスワードが正しくありません')
-      setLoading(false)
-      return
+      setError("メールアドレスまたはパスワードが正しくありません");
+      setLoading(false);
+      return;
     }
-    router.push('/dashboard')
-    router.refresh()
-  }
+
+    router.push("/dashboard");
+    router.refresh();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -58,30 +68,37 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <div>
               <label className="label">メールアドレス</label>
               <input
-                {...register('email')}
+                {...register("email")}
                 type="email"
                 placeholder="example@email.com"
                 className="input-field"
               />
               {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
             <div>
               <label className="label">パスワード</label>
               <input
-                {...register('password')}
+                {...register("password")}
                 type="password"
                 placeholder="8文字以上"
                 className="input-field"
               />
               {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -90,7 +107,7 @@ export default function LoginPage() {
               disabled={loading}
               className="btn-primary w-full mt-2"
             >
-              {loading ? 'ログイン中...' : 'ログイン'}
+              {loading ? "ログイン中..." : "ログイン"}
             </button>
           </form>
         </div>
@@ -103,5 +120,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }
