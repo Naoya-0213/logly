@@ -30,6 +30,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: FormData) => {
+    console.log("onSubmit発火！", data);
     setLoading(true);
     setError(null);
 
