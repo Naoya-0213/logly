@@ -1,153 +1,234 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase'
+import AppLayout from "@/components/layout/AppLayout";
+import { createClient } from "@/lib/supabase";
+import { Category, StudyRecord } from "@/types";
+import { Clock, Flame, Plus, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-const schema = z.object({
-  display_name: z
-    .string()
-    .min(1, 'ユーザーネームを入力してください')
-    .max(20, 'ユーザーネームは20文字以内で入力してください'),
-  email: z.string().email('正しいメールアドレスを入力してください'),
-  password: z
-    .string()
-    .min(8, 'パスワードは8文字以上で入力してください')
-    .regex(/[a-zA-Z]/, 'パスワードに英字を含めてください')
-    .regex(/[0-9]/, 'パスワードに数字を含めてください'),
-})
+export default function DashboardPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const [records, setRecords] = useState<StudyRecord[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-type FormData = z.infer<typeof schema>
-
-export default function RegisterPage() {
-  const supabase = createClient()
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
-  })
-
-  const onSubmit = async (data: FormData) => {
-    setLoading(true)
-    setError(null)
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { display_name: data.display_name }
+  useEffect(() => {
+    const fetchData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
       }
-    })
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-    setSent(true)
-    setLoading(false)
-  }
 
-  if (sent) {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+
+      const { data: recordsData } = await supabase
+        .from("study_records")
+        .select("*, categories(*)")
+        .eq("user_id", user.id)
+        .gte("study_date", firstDay)
+        .order("study_date", { ascending: false });
+
+      const { data: categoriesData } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("user_id", user.id);
+
+      setRecords(recordsData || []);
+      setCategories(categoriesData || []);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const totalMinutes = records.reduce((sum, r) => sum + r.duration_minutes, 0);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalMins = totalMinutes % 60;
+
+  const today = new Date().toISOString().split("T")[0];
+  const todayMinutes = records
+    .filter((r) => r.study_date === today)
+    .reduce((sum, r) => sum + r.duration_minutes, 0);
+
+  const categoryStats = categories
+    .map((cat) => {
+      const mins = records
+        .filter((r) => r.category_id === cat.id)
+        .reduce((sum, r) => sum + r.duration_minutes, 0);
+      return {
+        name: cat.name,
+        minutes: mins,
+        hours: Math.round((mins / 60) * 10) / 10,
+        color: cat.color,
+      };
+    })
+    .filter((c) => c.minutes > 0)
+    .sort((a, b) => b.minutes - a.minutes);
+
+  const recentRecords = records.slice(0, 5);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            確認メールを送信しました
-          </h2>
-          <p className="text-gray-500 text-sm mb-6">
-            登録したメールアドレスに確認メールを送りました。
-            メール内のリンクをクリックして登録を完了してください。
-          </p>
-          <Link href="/login" className="btn-primary">
-            ログインページへ
-          </Link>
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-400">読み込み中...</p>
         </div>
-      </div>
-    )
+      </AppLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-indigo-500">Logly</h1>
-          <p className="text-gray-500 text-sm mt-2">学習記録をシンプルに</p>
-        </div>
-
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-800 mb-6">新規登録</h2>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <div>
-              <label className="label">ユーザーネーム</label>
-              <input
-                {...register('display_name')}
-                type="text"
-                placeholder="例：田中太郎（20文字以内）"
-                className="input-field"
-              />
-              {errors.display_name && (
-                <p className="text-red-500 text-xs mt-1">{errors.display_name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">メールアドレス</label>
-              <input
-                {...register('email')}
-                type="email"
-                placeholder="example@email.com"
-                className="input-field"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">パスワード</label>
-              <input
-                {...register('password')}
-                type="password"
-                placeholder="8文字以上・英数字混在"
-                className="input-field"
-              />
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
-              )}
-              <p className="text-gray-400 text-xs mt-1">
-                ※ 英字と数字を含む8文字以上
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full mt-2"
-            >
-              {loading ? '登録中...' : 'アカウントを作成'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          すでにアカウントをお持ちの方は
-          <Link href="/login" className="text-indigo-500 font-medium ml-1">
-            ログイン
+    <AppLayout>
+      <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-800">
+              ダッシュボード
+            </h1>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {new Date().toLocaleDateString("ja-JP", {
+                year: "numeric",
+                month: "long",
+              })}
+            </p>
+          </div>
+          <Link
+            href="/records/new"
+            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus size={16} />
+            記録を追加
           </Link>
-        </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+          <div className="card">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={14} className="text-indigo-400" />
+              <span className="text-xs text-gray-400">今月の合計</span>
+            </div>
+            <div className="text-2xl font-semibold text-gray-800">
+              {totalHours}
+              <span className="text-sm font-normal text-gray-400">h </span>
+              {totalMins}
+              <span className="text-sm font-normal text-gray-400">m</span>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock size={14} className="text-indigo-400" />
+              <span className="text-xs text-gray-400">今日の学習</span>
+            </div>
+            <div className="text-2xl font-semibold text-gray-800">
+              {Math.floor(todayMinutes / 60)}
+              <span className="text-sm font-normal text-gray-400">h </span>
+              {todayMinutes % 60}
+              <span className="text-sm font-normal text-gray-400">m</span>
+            </div>
+          </div>
+
+          <div className="card col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Flame size={14} className="text-orange-400" />
+              <span className="text-xs text-gray-400">今月の記録数</span>
+            </div>
+            <div className="text-2xl font-semibold text-gray-800">
+              {records.length}
+              <span className="text-sm font-normal text-gray-400"> 件</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div className="card">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">
+              カテゴリー別
+            </h2>
+            {categoryStats.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">
+                まだ記録がありません
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={categoryStats} layout="vertical">
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={60}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`${value}h`, "学習時間"]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #F3F4F6",
+                    }}
+                  />
+                  <Bar dataKey="hours" radius={[0, 4, 4, 0]}>
+                    {categoryStats.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className="card">
+            <h2 className="text-sm font-semibold text-gray-700 mb-4">
+              最近の記録
+            </h2>
+            {recentRecords.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">
+                まだ記録がありません
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {recentRecords.map((record) => (
+                  <div key={record.id} className="flex items-center gap-3">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: record.categories?.color || "#6366F1",
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-700 truncate">
+                        {record.content || "（メモなし）"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {record.categories?.name || "カテゴリーなし"}
+                      </p>
+                    </div>
+                    <span className="text-sm text-gray-500 flex-shrink-0">
+                      {record.duration_minutes}分
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  )
+    </AppLayout>
+  );
 }
