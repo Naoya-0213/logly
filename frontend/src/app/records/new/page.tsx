@@ -97,7 +97,6 @@ export default function NewRecordPage() {
   return (
     <AppLayout>
       <div className="p-4 md:p-6 max-w-lg mx-auto">
-        {/* ヘッダー */}
         <div className="flex items-center gap-3 mb-6">
           <Link href="/records" className="text-gray-400 hover:text-gray-600">
             <ChevronLeft size={20} />
@@ -113,7 +112,6 @@ export default function NewRecordPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            {/* 日付 */}
             <div>
               <label className="label">日付</label>
               <input
@@ -126,7 +124,6 @@ export default function NewRecordPage() {
               )}
             </div>
 
-            {/* カテゴリー */}
             <div>
               <label className="label">カテゴリー</label>
               <select {...register('category_id')} className="input-field">
@@ -137,7 +134,6 @@ export default function NewRecordPage() {
               </select>
             </div>
 
-            {/* 勉強内容 */}
             <div>
               <label className="label">勉強内容</label>
               <input
@@ -151,11 +147,9 @@ export default function NewRecordPage() {
               )}
             </div>
 
-            {/* 勉強時間 */}
             <div>
               <label className="label">勉強時間</label>
               <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-white">
-                {/* 時間 */}
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xs text-gray-400">時間</span>
                   <div className="flex items-center gap-2">
@@ -173,9 +167,8 @@ export default function NewRecordPage() {
                   </div>
                 </div>
 
-                <span className="text-gray-400 text-lg mb-0.5">:</span>
+                <span className="text-gray-400 text-lg">:</span>
 
-                {/* 分 */}
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xs text-gray-400">分</span>
                   <div className="flex items-center gap-2">
@@ -199,7 +192,6 @@ export default function NewRecordPage() {
               </div>
             </div>
 
-            {/* メモ */}
             <div>
               <label className="label">メモ（任意）</label>
               <textarea
@@ -209,7 +201,6 @@ export default function NewRecordPage() {
               />
             </div>
 
-            {/* ボタン */}
             <div className="flex gap-3 mt-2">
               <Link
                 href="/records"
@@ -231,4 +222,3 @@ export default function NewRecordPage() {
     </AppLayout>
   )
 }
-
