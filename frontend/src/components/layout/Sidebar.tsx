@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Clock, CalendarDays, Tag, Settings } from 'lucide-react'
+import { LayoutDashboard, Clock, CalendarDays, Tag, Settings, CheckSquare } from 'lucide-react'
 import clsx from 'clsx'
 
 const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
   { href: '/records/new', label: '記録を追加', icon: Clock },
   { href: '/records', label: '履歴一覧', icon: CalendarDays },
+  { href: '/todos', label: 'TODO', icon: CheckSquare },
   { href: '/categories', label: 'カテゴリー', icon: Tag },
   { href: '/settings', label: '設定', icon: Settings },
 ]

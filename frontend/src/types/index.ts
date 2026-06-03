@@ -30,3 +30,15 @@ export type StudyStats = {
   today_minutes: number
   streak_days: number
 }
+
+export type Todo = {
+  id: number
+  user_id: string
+  category_id: number | null
+  title: string
+  description: string | null
+  due_date: string | null
+  is_completed: boolean
+  created_at: string
+  categories?: Category
+}
