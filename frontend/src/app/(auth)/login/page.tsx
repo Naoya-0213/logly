@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { z } from "zod";
 
 const schema = z.object({
@@ -48,6 +49,22 @@ export default function LoginPage() {
       return;
     }
 
+    toast.success("おかえりなさい！👋 今日もがんばりましょう！", {
+      duration: 4000,
+      style: {
+        background: "#fff",
+        color: "#374151",
+        borderRadius: "12px",
+        border: "1px solid #F3F4F6",
+        padding: "12px 16px",
+        fontSize: "14px",
+        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+      },
+      iconTheme: {
+        primary: "#6366F1",
+        secondary: "#fff",
+      },
+    });
     router.push("/dashboard");
     router.refresh();
   };
