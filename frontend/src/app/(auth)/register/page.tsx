@@ -40,6 +40,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     setError(null);
+
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -47,13 +48,16 @@ export default function RegisterPage() {
         data: { display_name: data.display_name },
       },
     });
+
     if (error) {
       setError(error.message);
       setLoading(false);
       return;
     }
-    toast.success("登録おめでとう！🎉 学習記録をつけよう！", {
-      duration: 5000,
+
+    // トーストは1回だけ！
+    toast.success("確認メールを送信しました！📧", {
+      duration: 4000,
       style: {
         background: "#fff",
         color: "#374151",
@@ -68,22 +72,7 @@ export default function RegisterPage() {
         secondary: "#fff",
       },
     });
-    toast.success("登録おめでとう！🎉 学習記録をつけよう！", {
-      duration: 5000,
-      style: {
-        background: "#fff",
-        color: "#374151",
-        borderRadius: "12px",
-        border: "1px solid #F3F4F6",
-        padding: "12px 16px",
-        fontSize: "14px",
-        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-      },
-      iconTheme: {
-        primary: "#6366F1",
-        secondary: "#fff",
-      },
-    });
+
     setSent(true);
     setLoading(false);
   };
