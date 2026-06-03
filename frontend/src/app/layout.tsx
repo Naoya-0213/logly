@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Logly - 学習記録アプリ',
-  description: '毎日の学習を記録して、成長を可視化しよう',
+  title: "Logly - 学習記録アプリ",
+  description: "毎日の学習を記録して、成長を可視化しよう",
   icons: {
-    icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
+    icon: "/favicon.svg",
+    apple: "/apple-touch-icon.svg",
   },
-}
+};
 
 export default function RootLayout({
   children,
