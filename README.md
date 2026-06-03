@@ -27,27 +27,26 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 
 ## ✨ 主な機能
 
-| 機能                      | 説明                                   |
-| ------------------------- | -------------------------------------- |
-| 👤 ユーザー登録・ログイン | メールアドレスでアカウント作成         |
-| ⏱️ 勉強時間の記録         | 日付・内容・時間・カテゴリを記録       |
-| ✏️ 記録の編集・削除       | 過去の記録を修正・削除                 |
-| 📋 記録一覧表示           | 過去の学習履歴を日付ごとに確認         |
-| 📊 ダッシュボード         | 今月の合計・カテゴリ別グラフを表示     |
-| 🏷️ カテゴリー管理         | 科目ごとのカテゴリを自由に作成・編集   |
-| ✅ TODO機能               | 学習タスクの管理・期限日・完了管理     |
-| ⚙️ アカウント設定         | ユーザーネーム・メール・パスワード変更 |
-| 📱 レスポンシブ対応       | PC・スマホどちらでも快適に使える       |
-| 🔔 トースト通知           | 操作結果をリアルタイムで通知           |
-| 👥 フレンド機能（予定）   | 友達と進捗を共有                       |
-| 🏆 ランキング機能（予定） | 仲間と切磋琢磨                         |
+| 機能 | 説明 |
+|---|---|
+| 👤 ユーザー登録・ログイン | メールアドレスでアカウント作成 |
+| ⏱️ 勉強時間の記録 | 日付・内容・時間・カテゴリを記録 |
+| ✏️ 記録の編集・削除 | 過去の記録を修正・削除 |
+| 📋 記録一覧表示 | 過去の学習履歴を日付ごとに確認 |
+| 📊 ダッシュボード | 今月の合計・カテゴリ別グラフを表示 |
+| 🏷️ カテゴリー管理 | 科目ごとのカテゴリを自由に作成・編集 |
+| ✅ TODO機能 | 学習タスクの管理・期限日・完了管理 |
+| ⚙️ アカウント設定 | ユーザーネーム・メール・パスワード変更 |
+| 📱 レスポンシブ対応 | PC・スマホどちらでも快適に使える |
+| 🔔 トースト通知 | 操作結果をリアルタイムで通知 |
+| 👥 フレンド機能（予定） | 友達と進捗を共有 |
+| 🏆 ランキング機能（予定） | 仲間と切磋琢磨 |
 
 ---
 
 ## 🛠️ 技術スタック
 
 ### フロントエンド
-
 - [Next.js 16](https://nextjs.org/) (React / TypeScript)
 - [Tailwind CSS v4](https://tailwindcss.com/)
 - [react-hook-form](https://react-hook-form.com/) + [Zod](https://zod.dev/)（バリデーション）
@@ -56,17 +55,14 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 - [react-hot-toast](https://react-hot-toast.com/)（トースト通知）
 
 ### バックエンド（フェーズ2予定）
-
 - [Spring Boot](https://spring.io/projects/spring-boot) (Java 21)
 - REST API
 
 ### データベース・認証
-
 - [Supabase](https://supabase.com/) (PostgreSQL)
 - Supabase Auth（認証）
 
 ### インフラ
-
 - フロントエンド：[Vercel](https://vercel.com/)
 - バックエンド：[Railway](https://railway.app/)（フェーズ2予定）
 
@@ -89,58 +85,53 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 ## 🗄️ データベース設計
 
 ### users（ユーザー）
-
-| カラム       | 型        | 説明                              |
-| ------------ | --------- | --------------------------------- |
-| id           | UUID      | 主キー（Supabase Authが自動生成） |
-| email        | TEXT      | メールアドレス                    |
-| display_name | TEXT      | 表示名                            |
-| created_at   | TIMESTAMP | 登録日時                          |
+| カラム | 型 | 説明 |
+|---|---|---|
+| id | UUID | 主キー（Supabase Authが自動生成） |
+| email | TEXT | メールアドレス |
+| display_name | TEXT | 表示名 |
+| created_at | TIMESTAMP | 登録日時 |
 
 ### categories（カテゴリー）
-
-| カラム     | 型        | 説明                           |
-| ---------- | --------- | ------------------------------ |
-| id         | BIGINT    | 主キー                         |
-| user_id    | UUID      | ユーザーID（外部キー）         |
-| name       | TEXT      | カテゴリー名（例：数学、英語） |
-| color      | TEXT      | 表示色（例：#6366F1）          |
-| created_at | TIMESTAMP | 作成日時                       |
+| カラム | 型 | 説明 |
+|---|---|---|
+| id | BIGINT | 主キー |
+| user_id | UUID | ユーザーID（外部キー） |
+| name | TEXT | カテゴリー名（例：数学、英語） |
+| color | TEXT | 表示色（例：#6366F1） |
+| created_at | TIMESTAMP | 作成日時 |
 
 ### study_records（勉強記録）
-
-| カラム           | 型        | 説明                     |
-| ---------------- | --------- | ------------------------ |
-| id               | BIGINT    | 主キー                   |
-| user_id          | UUID      | ユーザーID（外部キー）   |
-| category_id      | BIGINT    | カテゴリーID（外部キー） |
-| study_date       | DATE      | 勉強した日付             |
-| duration_minutes | INTEGER   | 勉強時間（分）           |
-| content          | TEXT      | 勉強内容のメモ           |
-| created_at       | TIMESTAMP | 作成日時                 |
+| カラム | 型 | 説明 |
+|---|---|---|
+| id | BIGINT | 主キー |
+| user_id | UUID | ユーザーID（外部キー） |
+| category_id | BIGINT | カテゴリーID（外部キー） |
+| study_date | DATE | 勉強した日付 |
+| duration_minutes | INTEGER | 勉強時間（分） |
+| content | TEXT | 勉強内容のメモ |
+| created_at | TIMESTAMP | 作成日時 |
 
 ### todos（TODO）
-
-| カラム       | 型        | 説明                     |
-| ------------ | --------- | ------------------------ |
-| id           | BIGINT    | 主キー                   |
-| user_id      | UUID      | ユーザーID（外部キー）   |
-| category_id  | BIGINT    | カテゴリーID（外部キー） |
-| title        | TEXT      | タイトル                 |
-| description  | TEXT      | 詳細                     |
-| due_date     | DATE      | 期限日                   |
-| is_completed | BOOLEAN   | 完了フラグ               |
-| created_at   | TIMESTAMP | 作成日時                 |
+| カラム | 型 | 説明 |
+|---|---|---|
+| id | BIGINT | 主キー |
+| user_id | UUID | ユーザーID（外部キー） |
+| category_id | BIGINT | カテゴリーID（外部キー） |
+| title | TEXT | タイトル |
+| description | TEXT | 詳細 |
+| due_date | DATE | 期限日 |
+| is_completed | BOOLEAN | 完了フラグ |
+| created_at | TIMESTAMP | 作成日時 |
 
 ### friendships（フレンド関係 ※将来実装）
-
-| カラム       | 型        | 説明               |
-| ------------ | --------- | ------------------ |
-| id           | BIGINT    | 主キー             |
-| requester_id | UUID      | 申請したユーザー   |
-| receiver_id  | UUID      | 申請されたユーザー |
-| status       | TEXT      | pending / accepted |
-| created_at   | TIMESTAMP | 申請日時           |
+| カラム | 型 | 説明 |
+|---|---|---|
+| id | BIGINT | 主キー |
+| requester_id | UUID | 申請したユーザー |
+| receiver_id | UUID | 申請されたユーザー |
+| status | TEXT | pending / accepted |
+| created_at | TIMESTAMP | 申請日時 |
 
 ---
 
@@ -178,7 +169,6 @@ logly/
 ## 🚀 開発ロードマップ
 
 ### フェーズ1（完了）
-
 - [x] 全体設計・DB設計
 - [x] Supabaseセットアップ・テーブル作成
 - [x] Next.jsプロジェクト作成
@@ -192,7 +182,6 @@ logly/
 - [x] デプロイ（Vercel）
 
 ### フェーズ2（予定）
-
 - [ ] Spring Boot API実装
 - [ ] フレンド機能
 - [ ] ランキング機能
@@ -203,7 +192,6 @@ logly/
 ## 🔧 環境構築
 
 ### 必要な環境
-
 - Node.js 18以上
 - npm 9以上
 
