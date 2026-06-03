@@ -1,125 +1,173 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import AppLayout from '@/components/layout/AppLayout'
-import { Category } from '@/types'
-import { Pencil, Trash2, Plus, Check, X } from 'lucide-react'
+import AppLayout from "@/components/layout/AppLayout";
+import { createClient } from "@/lib/supabase";
+import { Category } from "@/types";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const COLORS = [
-  '#6366F1', // インディゴ
-  '#34D399', // ミント
-  '#F472B6', // ピンク
-  '#FBBF24', // イエロー
-  '#F87171', // レッド
-  '#60A5FA', // ブルー
-  '#A78BFA', // バイオレット
-  '#FB923C', // オレンジ
-]
+  "#6366F1", // インディゴ
+  "#34D399", // ミント
+  "#F472B6", // ピンク
+  "#FBBF24", // イエロー
+  "#F87171", // レッド
+  "#60A5FA", // ブルー
+  "#A78BFA", // バイオレット
+  "#FB923C", // オレンジ
+];
 
 export default function CategoriesPage() {
-  const router = useRouter()
-  const supabase = createClient()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const supabase = createClient();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // 新規追加フォーム
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newColor, setNewColor] = useState(COLORS[0])
-  const [adding, setAdding] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState(COLORS[0]);
+  const [adding, setAdding] = useState(false);
 
   // 編集
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editColor, setEditColor] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login')
-        return
+        router.push("/login");
+        return;
       }
 
       const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
+        .from("categories")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
 
-      setCategories(data || [])
-      setLoading(false)
-    }
+      setCategories(data || []);
+      setLoading(false);
+    };
 
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   // カテゴリー追加
   const handleAdd = async () => {
-    if (!newName.trim()) return
-    setAdding(true)
+    if (!newName.trim()) return;
+    setAdding(true);
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
 
     const { data, error } = await supabase
-      .from('categories')
+      .from("categories")
       .insert({
         user_id: user.id,
         name: newName.trim(),
         color: newColor,
       })
       .select()
-      .single()
+      .single();
 
     if (!error && data) {
-      setCategories([...categories, data])
-      setNewName('')
-      setNewColor(COLORS[0])
-      setShowAddForm(false)
+      setCategories([...categories, data]);
+      setNewName("");
+      setNewColor(COLORS[0]);
+      setShowAddForm(false);
     }
-    setAdding(false)
-  }
+    setAdding(false);
+  };
 
   // 編集開始
   const startEdit = (cat: Category) => {
-    setEditingId(cat.id)
-    setEditName(cat.name)
-    setEditColor(cat.color)
-  }
+    setEditingId(cat.id);
+    setEditName(cat.name);
+    setEditColor(cat.color);
+  };
 
   // 編集保存
   const handleEdit = async (id: number) => {
-    if (!editName.trim()) return
+    if (!editName.trim()) return;
 
     const { error } = await supabase
-      .from('categories')
+      .from("categories")
       .update({ name: editName.trim(), color: editColor })
-      .eq('id', id)
+      .eq("id", id);
 
     if (!error) {
-      setCategories(categories.map(cat =>
-        cat.id === id ? { ...cat, name: editName.trim(), color: editColor } : cat
-      ))
-      setEditingId(null)
+      setCategories(
+        categories.map((cat) =>
+          cat.id === id
+            ? { ...cat, name: editName.trim(), color: editColor }
+            : cat,
+        ),
+      );
+      setEditingId(null);
     }
-  }
+  };
 
   // 削除
   const handleDelete = async (id: number) => {
-    if (!confirm('このカテゴリーを削除しますか？\n※このカテゴリーの記録はカテゴリーなしになります')) return
-
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id)
-
-    if (!error) {
-      setCategories(categories.filter(cat => cat.id !== id))
-    }
-  }
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-gray-700">
+            このカテゴリーを削除しますか？
+          </p>
+          <p className="text-xs text-gray-400">
+            ※記録はカテゴリーなしになります
+          </p>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={async () => {
+                toast.dismiss(t.id);
+                const { error } = await supabase
+                  .from("categories")
+                  .delete()
+                  .eq("id", id);
+                if (!error) {
+                  setCategories((prev) => prev.filter((cat) => cat.id !== id));
+                  toast.success("カテゴリーを削除しました");
+                } else {
+                  toast.error("削除に失敗しました");
+                }
+              }}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-3 rounded-lg transition-colors"
+            >
+              削除する
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs py-1.5 px-3 rounded-lg transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+        style: {
+          background: "#fff",
+          color: "#374151",
+          borderRadius: "12px",
+          border: "1px solid #F3F4F6",
+          padding: "12px 16px",
+          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+        },
+      },
+    );
+  };
 
   if (loading) {
     return (
@@ -128,7 +176,7 @@ export default function CategoriesPage() {
           <p className="text-gray-400">読み込み中...</p>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -137,8 +185,12 @@ export default function CategoriesPage() {
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">カテゴリー管理</h1>
-            <p className="text-sm text-gray-400 mt-0.5">自由に追加・編集できます</p>
+            <h1 className="text-xl font-semibold text-gray-800">
+              カテゴリー管理
+            </h1>
+            <p className="text-sm text-gray-400 mt-0.5">
+              自由に追加・編集できます
+            </p>
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
@@ -152,7 +204,9 @@ export default function CategoriesPage() {
         {/* 新規追加フォーム */}
         {showAddForm && (
           <div className="card border-indigo-100 border-2 mb-4">
-            <p className="text-sm font-medium text-indigo-500 mb-3">新しいカテゴリーを追加</p>
+            <p className="text-sm font-medium text-indigo-500 mb-3">
+              新しいカテゴリーを追加
+            </p>
             <input
               type="text"
               placeholder="カテゴリー名（例：英語、数学）"
@@ -162,7 +216,7 @@ export default function CategoriesPage() {
               autoFocus
             />
             <div className="flex gap-2 mb-3">
-              {COLORS.map(color => (
+              {COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
@@ -170,8 +224,8 @@ export default function CategoriesPage() {
                   className="w-6 h-6 rounded-full transition-transform hover:scale-110"
                   style={{
                     backgroundColor: color,
-                    outline: newColor === color ? `2px solid ${color}` : 'none',
-                    outlineOffset: '2px',
+                    outline: newColor === color ? `2px solid ${color}` : "none",
+                    outlineOffset: "2px",
                   }}
                 />
               ))}
@@ -182,12 +236,12 @@ export default function CategoriesPage() {
                 disabled={adding || !newName.trim()}
                 className="btn-primary flex-1"
               >
-                {adding ? '追加中...' : '保存'}
+                {adding ? "追加中..." : "保存"}
               </button>
               <button
                 onClick={() => {
-                  setShowAddForm(false)
-                  setNewName('')
+                  setShowAddForm(false);
+                  setNewName("");
                 }}
                 className="btn-secondary flex-1"
               >
@@ -200,7 +254,9 @@ export default function CategoriesPage() {
         {/* カテゴリー一覧 */}
         {categories.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-sm mb-4">カテゴリーがまだありません</p>
+            <p className="text-gray-400 text-sm mb-4">
+              カテゴリーがまだありません
+            </p>
             <button
               onClick={() => setShowAddForm(true)}
               className="inline-flex items-center gap-2 bg-indigo-500 text-white text-sm px-4 py-2 rounded-xl"
@@ -211,7 +267,7 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {categories.map(cat => (
+            {categories.map((cat) => (
               <div key={cat.id} className="card">
                 {editingId === cat.id ? (
                   // 編集モード
@@ -224,7 +280,7 @@ export default function CategoriesPage() {
                       autoFocus
                     />
                     <div className="flex gap-2">
-                      {COLORS.map(color => (
+                      {COLORS.map((color) => (
                         <button
                           key={color}
                           type="button"
@@ -232,8 +288,11 @@ export default function CategoriesPage() {
                           className="w-6 h-6 rounded-full transition-transform hover:scale-110"
                           style={{
                             backgroundColor: color,
-                            outline: editColor === color ? `2px solid ${color}` : 'none',
-                            outlineOffset: '2px',
+                            outline:
+                              editColor === color
+                                ? `2px solid ${color}`
+                                : "none",
+                            outlineOffset: "2px",
                           }}
                         />
                       ))}
@@ -289,5 +348,5 @@ export default function CategoriesPage() {
         )}
       </div>
     </AppLayout>
-  )
+  );
 }

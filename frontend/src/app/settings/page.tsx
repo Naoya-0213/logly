@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/layout/AppLayout'
 import { User } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -19,14 +20,6 @@ export default function SettingsPage() {
   const [nameLoading, setNameLoading] = useState(false)
   const [emailLoading, setEmailLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
-
-  const [nameSuccess, setNameSuccess] = useState(false)
-  const [emailSuccess, setEmailSuccess] = useState(false)
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
-
-  const [nameError, setNameError] = useState('')
-  const [emailError, setEmailError] = useState('')
-  const [passwordError, setPasswordError] = useState('')
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -53,16 +46,15 @@ export default function SettingsPage() {
   // ユーザーネーム変更
   const handleNameUpdate = async () => {
     if (!displayName.trim()) {
-      setNameError('ユーザーネームを入力してください')
+      toast.error('ユーザーネームを入力してください')
       return
     }
     if (displayName.length > 20) {
-      setNameError('20文字以内で入力してください')
+      toast.error('20文字以内で入力してください')
       return
     }
 
     setNameLoading(true)
-    setNameError('')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -73,10 +65,9 @@ export default function SettingsPage() {
       .eq('id', user.id)
 
     if (error) {
-      setNameError('更新に失敗しました')
+      toast.error('更新に失敗しました')
     } else {
-      setNameSuccess(true)
-      setTimeout(() => setNameSuccess(false), 3000)
+      toast.success('ユーザーネームを更新しました！')
     }
     setNameLoading(false)
   }
@@ -84,26 +75,24 @@ export default function SettingsPage() {
   // メールアドレス変更
   const handleEmailUpdate = async () => {
     if (!newEmail.trim()) {
-      setEmailError('メールアドレスを入力してください')
+      toast.error('メールアドレスを入力してください')
       return
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(newEmail)) {
-      setEmailError('正しいメールアドレスを入力してください')
+      toast.error('正しいメールアドレスを入力してください')
       return
     }
 
     setEmailLoading(true)
-    setEmailError('')
 
     const { error } = await supabase.auth.updateUser({ email: newEmail })
 
     if (error) {
-      setEmailError('更新に失敗しました')
+      toast.error('更新に失敗しました')
     } else {
-      setEmailSuccess(true)
+      toast.success('確認メールを送信しました！')
       setNewEmail('')
-      setTimeout(() => setEmailSuccess(false), 3000)
     }
     setEmailLoading(false)
   }
@@ -111,34 +100,32 @@ export default function SettingsPage() {
   // パスワード変更
   const handlePasswordUpdate = async () => {
     if (!newPassword) {
-      setPasswordError('パスワードを入力してください')
+      toast.error('パスワードを入力してください')
       return
     }
     if (newPassword.length < 8) {
-      setPasswordError('8文字以上で入力してください')
+      toast.error('8文字以上で入力してください')
       return
     }
     if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      setPasswordError('英字と数字を含めてください')
+      toast.error('英字と数字を含めてください')
       return
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('パスワードが一致しません')
+      toast.error('パスワードが一致しません')
       return
     }
 
     setPasswordLoading(true)
-    setPasswordError('')
 
     const { error } = await supabase.auth.updateUser({ password: newPassword })
 
     if (error) {
-      setPasswordError('更新に失敗しました')
+      toast.error('更新に失敗しました')
     } else {
-      setPasswordSuccess(true)
+      toast.success('パスワードを更新しました！')
       setNewPassword('')
       setConfirmPassword('')
-      setTimeout(() => setPasswordSuccess(false), 3000)
     }
     setPasswordLoading(false)
   }
@@ -152,13 +139,11 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       <div className="p-4 md:p-6 max-w-lg mx-auto">
-        {/* ヘッダー */}
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-800">アカウント設定</h1>
           <p className="text-sm text-gray-400 mt-0.5">プロフィールとセキュリティ設定</p>
         </div>
 
-        {/* プロフィールアイコン */}
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
             <User size={32} className="text-indigo-400" />
@@ -170,16 +155,6 @@ export default function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             ユーザーネーム変更
           </h2>
-          {nameSuccess && (
-            <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-xl mb-3">
-              ✅ ユーザーネームを更新しました！
-            </div>
-          )}
-          {nameError && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-3">
-              {nameError}
-            </div>
-          )}
           <div className="flex flex-col gap-3">
             <div>
               <label className="label">新しいユーザーネーム</label>
@@ -210,16 +185,6 @@ export default function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             メールアドレス変更
           </h2>
-          {emailSuccess && (
-            <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-xl mb-3">
-              ✅ 確認メールを送信しました！
-            </div>
-          )}
-          {emailError && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-3">
-              {emailError}
-            </div>
-          )}
           <div className="flex flex-col gap-3">
             <div>
               <label className="label">現在のメールアドレス</label>
@@ -255,16 +220,6 @@ export default function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             パスワード変更
           </h2>
-          {passwordSuccess && (
-            <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-xl mb-3">
-              ✅ パスワードを更新しました！
-            </div>
-          )}
-          {passwordError && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-3">
-              {passwordError}
-            </div>
-          )}
           <div className="flex flex-col gap-3">
             <div>
               <label className="label">新しいパスワード</label>

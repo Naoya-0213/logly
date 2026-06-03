@@ -7,6 +7,7 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function RecordsPage() {
   const router = useRouter();
@@ -73,17 +74,54 @@ export default function RecordsPage() {
     fetchRecords();
   }, []);
 
+  //   削除
   const handleDelete = async (id: number) => {
-    if (!confirm("この記録を削除しますか？")) return;
-
-    const { error } = await supabase
-      .from("study_records")
-      .delete()
-      .eq("id", id);
-
-    if (!error) {
-      setRecords(records.filter((r) => r.id !== id));
-    }
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-gray-700">
+            この記録を削除しますか？
+          </p>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={async () => {
+                toast.dismiss(t.id);
+                const { error } = await supabase
+                  .from("study_records")
+                  .delete()
+                  .eq("id", id);
+                if (!error) {
+                  setRecords((prev) => prev.filter((r) => r.id !== id));
+                  toast.success("記録を削除しました");
+                } else {
+                  toast.error("削除に失敗しました");
+                }
+              }}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-3 rounded-lg transition-colors"
+            >
+              削除する
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs py-1.5 px-3 rounded-lg transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+        style: {
+          background: "#fff",
+          color: "#374151",
+          borderRadius: "12px",
+          border: "1px solid #F3F4F6",
+          padding: "12px 16px",
+          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+        },
+      },
+    );
   };
 
   // 累計合計時間
