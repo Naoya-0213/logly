@@ -80,18 +80,84 @@ export default function RegisterPage() {
   if (sent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            確認メールを送信しました
-          </h2>
-          <p className="text-gray-500 text-sm mb-6">
-            登録したメールアドレスに確認メールを送りました。
-            メール内のリンクをクリックして登録を完了してください。
-          </p>
-          <Link href="/login" className="btn-primary">
-            ログインページへ
-          </Link>
+        <div className="w-full max-w-sm">
+          <div className="text-center mt-4">
+            {/* メインカード */}
+            <div className="card">
+              <div className="text-center mb-4">
+                <div className="text-5xl mb-3">📧</div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                  確認メールを送信しました！
+                </h2>
+                <p className="text-gray-500 text-sm">
+                  ご登録のメールアドレスに確認メールをお送りしました。
+                </p>
+              </div>
+            </div>
+
+            {/* ① メール確認が必要なことを強調 */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4">
+              <p className="text-indigo-700 text-sm font-medium text-center">
+                ⚠️ ログインの前にメール認証が必要です
+              </p>
+            </div>
+
+            {/* 手順 */}
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                  1
+                </div>
+                <p className="text-sm text-gray-600">
+                  受信したメールを開いてください
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                  2
+                </div>
+                <p className="text-sm text-gray-600">
+                  「メールアドレスを確認する」ボタンをクリックしてください
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                  3
+                </div>
+                <p className="text-sm text-gray-600">
+                  認証完了後にログインページからログインしてください
+                </p>
+              </div>
+            </div>
+
+            {/* ② ログインできない理由を説明 */}
+            <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 mb-4">
+              <p className="text-yellow-700 text-xs text-center">
+                💡 メール認証が完了するまではログインできません。
+                <br />
+                先にメールのリンクをクリックしてください。
+              </p>
+            </div>
+
+            {/* ③ メールが届かない場合 */}
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-5">
+              <p className="text-gray-500 text-xs font-medium mb-2">
+                📭 メールが届かない場合
+              </p>
+              <ul className="text-gray-400 text-xs flex flex-col gap-1">
+                <li>・ 迷惑メールフォルダをご確認ください</li>
+                <li>・ メールアドレスが正しいか確認してください</li>
+                <li>・ 数分待ってから再度お試しください</li>
+              </ul>
+            </div>
+
+            <Link
+              href="/login"
+              className="btn-primary inline-block text-center"
+            >
+              ログインページへ
+            </Link>
+          </div>
         </div>
       </div>
     );
