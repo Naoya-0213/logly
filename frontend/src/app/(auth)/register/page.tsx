@@ -96,7 +96,7 @@ export default function RegisterPage() {
             </div>
 
             {/* ① メール確認が必要なことを強調 */}
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4 mt-4">
               <p className="text-indigo-700 text-sm font-medium text-center">
                 ⚠️ ログインの前にメール認証が必要です
               </p>
@@ -104,27 +104,27 @@ export default function RegisterPage() {
 
             {/* 手順 */}
             <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                   1
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 text-left">
                   受信したメールを開いてください
                 </p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                   2
                 </div>
-                <p className="text-sm text-gray-600">
-                  「メールアドレスを確認する」ボタンをクリックしてください
+                <p className="text-sm text-gray-600 text-left">
+                  「メールアドレスを確認する」ボタンをクリック
                 </p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                   3
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 text-left">
                   認証完了後にログインページからログインしてください
                 </p>
               </div>
@@ -140,7 +140,7 @@ export default function RegisterPage() {
             </div>
 
             {/* ③ メールが届かない場合 */}
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-5">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
               <p className="text-gray-500 text-xs font-medium mb-2">
                 📭 メールが届かない場合
               </p>
