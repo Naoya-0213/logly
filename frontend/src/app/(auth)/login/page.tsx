@@ -120,6 +120,21 @@ export default function LoginPage() {
               )}
             </div>
 
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.password.message}
+              </p>
+            )}
+            {/* 追加するリンク */}
+            <div className="text-right mt-1">
+              <Link
+                href="/reset-password"
+                className="text-xs text-indigo-400 hover:text-indigo-500"
+              >
+                パスワードをお忘れですか？
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
