@@ -148,6 +148,7 @@ export default function NewRecordPage() {
                 {...register("study_date")}
                 type="date"
                 className="input-field"
+                style={{ WebkitAppearance: "none" }}
               />
               {errors.study_date && (
                 <p className="text-red-500 text-xs mt-1">

@@ -1,119 +1,127 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase'
-import AppLayout from '@/components/layout/AppLayout'
-import { Category } from '@/types'
-import { ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
-import toast from 'react-hot-toast'
+import AppLayout from "@/components/layout/AppLayout";
+import { createClient } from "@/lib/supabase";
+import { Category } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
 
 const schema = z.object({
-  study_date: z.string().min(1, '日付を入力してください'),
+  study_date: z.string().min(1, "日付を入力してください"),
   category_id: z.string().optional(),
-  content: z.string().min(1, '勉強内容を入力してください'),
+  content: z.string().min(1, "勉強内容を入力してください"),
   duration_hours: z.number().min(0).max(23),
   duration_minutes: z.number().min(0).max(59),
   memo: z.string().optional(),
-})
+});
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 export default function EditRecordPage() {
-  const router = useRouter()
-  const params = useParams()
-  const id = params.id as string
-  const supabase = createClient()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+  const supabase = createClient();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       duration_hours: 0,
       duration_minutes: 30,
-    }
-  })
+    },
+  });
 
-  const hours = watch('duration_hours')
-  const minutes = watch('duration_minutes')
+  const hours = watch("duration_hours");
+  const minutes = watch("duration_minutes");
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login')
-        return
+        router.push("/login");
+        return;
       }
 
       // 既存の記録を取得
       const { data: record } = await supabase
-        .from('study_records')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single()
+        .from("study_records")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
 
       if (!record) {
-        toast.error('記録が見つかりませんでした')
-        router.push('/records')
-        return
+        toast.error("記録が見つかりませんでした");
+        router.push("/records");
+        return;
       }
 
       // フォームに既存データをセット
-      setValue('study_date', record.study_date)
-      setValue('category_id', record.category_id?.toString() || '')
-      setValue('content', record.content || '')
-      setValue('duration_hours', Math.floor(record.duration_minutes / 60))
-      setValue('duration_minutes', record.duration_minutes % 60)
+      setValue("study_date", record.study_date);
+      setValue("category_id", record.category_id?.toString() || "");
+      setValue("content", record.content || "");
+      setValue("duration_hours", Math.floor(record.duration_minutes / 60));
+      setValue("duration_minutes", record.duration_minutes % 60);
 
       // カテゴリー一覧を取得
       const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
+        .from("categories")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
 
-      setCategories(categoriesData || [])
-      setLoading(false)
-    }
-    fetchData()
-  }, [id])
+      setCategories(categoriesData || []);
+      setLoading(false);
+    };
+    fetchData();
+  }, [id]);
 
   const onSubmit = async (data: FormData) => {
-    setSaving(true)
+    setSaving(true);
 
-    const totalMinutes = data.duration_hours * 60 + data.duration_minutes
+    const totalMinutes = data.duration_hours * 60 + data.duration_minutes;
     if (totalMinutes === 0) {
-      toast.error('勉強時間を入力してください')
-      setSaving(false)
-      return
+      toast.error("勉強時間を入力してください");
+      setSaving(false);
+      return;
     }
 
     const { error } = await supabase
-      .from('study_records')
+      .from("study_records")
       .update({
         study_date: data.study_date,
         category_id: data.category_id ? Number(data.category_id) : null,
         content: data.content,
         duration_minutes: totalMinutes,
       })
-      .eq('id', id)
+      .eq("id", id);
 
     if (error) {
-      toast.error('保存に失敗しました')
-      setSaving(false)
-      return
+      toast.error("保存に失敗しました");
+      setSaving(false);
+      return;
     }
 
-    toast.success('記録を更新しました！')
-    router.push('/records')
-  }
+    toast.success("記録を更新しました！");
+    router.push("/records");
+  };
 
   if (loading) {
     return (
@@ -122,7 +130,7 @@ export default function EditRecordPage() {
           <p className="text-gray-400">読み込み中...</p>
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
@@ -136,25 +144,33 @@ export default function EditRecordPage() {
         </div>
 
         <div className="card">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <div>
               <label className="label">日付</label>
               <input
-                {...register('study_date')}
+                {...register("study_date")}
                 type="date"
                 className="input-field"
+                style={{ WebkitAppearance: "none" }}
               />
               {errors.study_date && (
-                <p className="text-red-500 text-xs mt-1">{errors.study_date.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.study_date.message}
+                </p>
               )}
             </div>
 
             <div>
               <label className="label">カテゴリー</label>
-              <select {...register('category_id')} className="input-field">
+              <select {...register("category_id")} className="input-field">
                 <option value="">カテゴリーなし</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -162,13 +178,15 @@ export default function EditRecordPage() {
             <div>
               <label className="label">勉強内容</label>
               <input
-                {...register('content')}
+                {...register("content")}
                 type="text"
                 placeholder="例：TOEIC単語100個"
                 className="input-field"
               />
               {errors.content && (
-                <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.content.message}
+                </p>
               )}
             </div>
 
@@ -180,15 +198,25 @@ export default function EditRecordPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setValue('duration_hours', Math.max(0, hours - 1))}
+                      onClick={() =>
+                        setValue("duration_hours", Math.max(0, hours - 1))
+                      }
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >−</button>
-                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">{hours}</span>
+                    >
+                      −
+                    </button>
+                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">
+                      {hours}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setValue('duration_hours', Math.min(23, hours + 1))}
+                      onClick={() =>
+                        setValue("duration_hours", Math.min(23, hours + 1))
+                      }
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
@@ -199,15 +227,25 @@ export default function EditRecordPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setValue('duration_minutes', Math.max(0, minutes - 5))}
+                      onClick={() =>
+                        setValue("duration_minutes", Math.max(0, minutes - 5))
+                      }
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >−</button>
-                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">{minutes}</span>
+                    >
+                      −
+                    </button>
+                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">
+                      {minutes}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setValue('duration_minutes', Math.min(55, minutes + 5))}
+                      onClick={() =>
+                        setValue("duration_minutes", Math.min(55, minutes + 5))
+                      }
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
@@ -220,7 +258,7 @@ export default function EditRecordPage() {
             <div>
               <label className="label">メモ（任意）</label>
               <textarea
-                {...register('memo')}
+                {...register("memo")}
                 placeholder="学習の感想や気づきを残しておきましょう…"
                 className="input-field resize-none h-20"
               />
@@ -238,12 +276,12 @@ export default function EditRecordPage() {
                 disabled={saving}
                 className="flex-1 btn-primary"
               >
-                {saving ? '保存中...' : '更新する'}
+                {saving ? "保存中..." : "更新する"}
               </button>
             </div>
           </form>
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }
