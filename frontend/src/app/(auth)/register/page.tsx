@@ -82,6 +82,11 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mt-4">
+            {/* ロゴ */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-indigo-500">Logly</h1>
+              <p className="text-gray-500 text-sm mt-2">学習記録をシンプルに</p>
+            </div>
             {/* メインカード */}
             <div className="card">
               <div className="text-center mb-4">
@@ -90,7 +95,9 @@ export default function RegisterPage() {
                   確認メールを送信しました！
                 </h2>
                 <p className="text-gray-500 text-sm">
-                  ご登録のメールアドレスに確認メールをお送りしました。
+                  ご登録のメールアドレスに
+                  <br />
+                  確認メールをお送りしました。
                 </p>
               </div>
             </div>
