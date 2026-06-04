@@ -8,13 +8,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Bar,
-  BarChart,
   Cell,
+  Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 
 export default function DashboardPage() {
@@ -167,28 +166,43 @@ export default function DashboardPage() {
                 まだ記録がありません
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={categoryStats} layout="vertical">
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    formatter={(value) => [`${value}h`, "学習時間"]}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #F3F4F6",
-                    }}
-                  />
-                  <Bar dataKey="hours" radius={[0, 4, 4, 0]}>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={categoryStats}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="minutes"
+                  >
                     {categoryStats.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
-                  </Bar>
-                </BarChart>
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => {
+                      const minutes = typeof value === "number" ? value : 0;
+                      return [
+                        `${Math.floor(minutes / 60)}h ${minutes % 60}m`,
+                        "学習時間",
+                      ];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #F3F4F6",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Legend
+                    formatter={(value) => (
+                      <span style={{ fontSize: "12px", color: "#6B7280" }}>
+                        {value}
+                      </span>
+                    )}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             )}
           </div>
