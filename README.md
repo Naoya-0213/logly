@@ -6,6 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-green)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8)
+![Vercel](https://img.shields.io/badge/Vercel-deployed-black)
 
 ---
 
@@ -14,6 +15,8 @@
 **Logly** は、日々の勉強時間を記録・管理・可視化できるWebアプリです。
 科目やジャンルごとにカテゴリを自由に作成し、学習の積み重ねをグラフで確認できます。
 TODOリスト機能で学習タスクも一元管理でき、継続的な学習をサポートします。
+
+🔗 **公開URL：https://logly-track.vercel.app**
 
 ---
 
@@ -29,16 +32,18 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 
 | 機能 | 説明 |
 |---|---|
-| 👤 ユーザー登録・ログイン | メールアドレスでアカウント作成 |
+| 👤 ユーザー登録・ログイン | メールアドレスでアカウント作成（メール認証付き） |
+| 🔐 パスワードリセット | メールアドレスからパスワードを再設定 |
 | ⏱️ 勉強時間の記録 | 日付・内容・時間・カテゴリを記録 |
 | ✏️ 記録の編集・削除 | 過去の記録を修正・削除 |
-| 📋 記録一覧表示 | 過去の学習履歴を日付ごとに確認 |
-| 📊 ダッシュボード | 今月の合計・カテゴリ別グラフを表示 |
-| 🏷️ カテゴリー管理 | 科目ごとのカテゴリを自由に作成・編集 |
-| ✅ TODO機能 | 学習タスクの管理・期限日・完了管理 |
+| 📋 記録一覧表示 | 過去の学習履歴を日付ごとに確認・検索・絞り込み |
+| 📊 ダッシュボード | 期間別集計・カテゴリ別円グラフを表示 |
+| 🏷️ カテゴリー管理 | 科目ごとのカテゴリを自由に作成・編集・削除 |
+| ✅ TODO機能 | 学習タスクの管理・期限日・カテゴリ・完了管理 |
 | ⚙️ アカウント設定 | ユーザーネーム・メール・パスワード変更 |
 | 📱 レスポンシブ対応 | PC・スマホどちらでも快適に使える |
 | 🔔 トースト通知 | 操作結果をリアルタイムで通知 |
+| 📧 メール通知 | 登録・パスワードリセット・変更通知メール |
 | 👥 フレンド機能（予定） | 友達と進捗を共有 |
 | 🏆 ランキング機能（予定） | 仲間と切磋琢磨 |
 
@@ -60,7 +65,10 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 
 ### データベース・認証
 - [Supabase](https://supabase.com/) (PostgreSQL)
-- Supabase Auth（認証）
+- Supabase Auth（メール認証・パスワードリセット）
+
+### メール配信
+- Gmail SMTP（カスタムSMTP）
 
 ### インフラ
 - フロントエンド：[Vercel](https://vercel.com/)
@@ -76,6 +84,8 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 【Next.js（フロントエンド）】
     ↓ Supabase Client
 【Supabase（PostgreSQL + Auth）】
+    ↓ Gmail SMTP
+【メール配信】
 ```
 
 > フェーズ2でSpring Boot APIを追加予定
@@ -139,47 +149,53 @@ TODOリスト機能で学習タスクも一元管理でき、継続的な学習�
 
 ```
 logly/
-└── frontend/                    # Next.jsプロジェクト
+└── frontend/                      # Next.jsプロジェクト
     └── src/
         ├── app/
         │   ├── (auth)/
-        │   │   ├── login/       # ログインページ
-        │   │   └── register/    # 新規登録ページ
-        │   ├── dashboard/       # ダッシュボード
+        │   │   ├── login/          # ログインページ
+        │   │   ├── register/       # 新規登録ページ
+        │   │   ├── reset-password/ # パスワードリセット
+        │   │   └── update-password/# パスワード更新
+        │   ├── dashboard/          # ダッシュボード
         │   ├── records/
-        │   │   ├── page.tsx     # 履歴一覧
-        │   │   ├── new/         # 記録追加
-        │   │   └── [id]/edit/   # 記録編集
-        │   ├── todos/           # TODO管理
-        │   ├── categories/      # カテゴリー管理
-        │   └── settings/        # アカウント設定
+        │   │   ├── page.tsx        # 履歴一覧
+        │   │   ├── new/            # 記録追加
+        │   │   └── [id]/edit/      # 記録編集
+        │   ├── todos/              # TODO管理
+        │   ├── categories/         # カテゴリー管理
+        │   └── settings/           # アカウント設定
         ├── components/
         │   └── layout/
-        │       ├── Sidebar.tsx  # サイドバー（PC）
-        │       ├── BottomTab.tsx # タブバー（スマホ）
-        │       └── AppLayout.tsx # 共通レイアウト
+        │       ├── Sidebar.tsx     # サイドバー（PC）
+        │       ├── BottomTab.tsx   # タブバー（スマホ）
+        │       └── AppLayout.tsx   # 共通レイアウト
         ├── lib/
-        │   └── supabase.ts      # Supabaseクライアント
+        │   └── supabase.ts         # Supabaseクライアント
         └── types/
-            └── index.ts         # 型定義
+            └── index.ts            # 型定義
 ```
 
 ---
 
 ## 🚀 開発ロードマップ
 
-### フェーズ1（完了）
+### フェーズ1（完了）✅
 - [x] 全体設計・DB設計
 - [x] Supabaseセットアップ・テーブル作成
 - [x] Next.jsプロジェクト作成
-- [x] 認証機能（登録・ログイン）
+- [x] 認証機能（登録・ログイン・メール認証）
+- [x] パスワードリセット機能
 - [x] 勉強記録のCRUD
 - [x] カテゴリー管理
-- [x] ダッシュボード・グラフ表示
-- [x] TODO機能
+- [x] ダッシュボード（期間切り替え・円グラフ）
+- [x] TODO機能（期限日・カテゴリー・完了管理）
 - [x] アカウント設定
-- [x] レスポンシブ対応
-- [x] デプロイ（Vercel）
+- [x] メール通知（Gmail SMTP）
+- [x] レスポンシブ対応（PC・スマホ）
+- [x] トースト通知
+- [x] ファビコン・Apple Touch Icon
+- [x] Vercelデプロイ
 
 ### フェーズ2（予定）
 - [ ] Spring Boot API実装
@@ -206,7 +222,7 @@ cd logly/frontend
 npm install
 
 # 環境変数を設定
-# .env.localを作成してSupabaseのURLとキーを入力
+# .env.localを作成して以下を入力
 NEXT_PUBLIC_SUPABASE_URL=あなたのSupabase Project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=あなたのSupabase Publishable key
 
