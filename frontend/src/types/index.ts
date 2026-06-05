@@ -49,8 +49,16 @@ export type Friendship = {
   receiver_id: string;
   status: "pending" | "accepted";
   created_at: string;
-  requester?: User;
-  receiver?: User;
+  requester?: {
+    id: string;
+    display_name: string | null;
+    email: string;
+  };
+  receiver?: {
+    id: string;
+    display_name: string | null;
+    email: string;
+  };
 };
 
 export type FriendWithStats = {
