@@ -49,22 +49,58 @@ export default function LoginPage() {
       return;
     }
 
-    toast.success("おかえりなさい！👋 今日もがんばりましょう！", {
-      duration: 4000,
-      style: {
-        background: "#fff",
-        color: "#374151",
-        borderRadius: "12px",
-        border: "1px solid #F3F4F6",
-        padding: "12px 16px",
-        fontSize: "14px",
-        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-      },
-      iconTheme: {
-        primary: "#6366F1",
-        secondary: "#fff",
-      },
-    });
+    // 初回ログインか判定
+    const { data: userData } = await supabase
+      .from("users")
+      .select("created_at")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (userData) {
+      const createdAt = new Date(userData.created_at);
+      const now = new Date();
+      const isFirstLogin =
+        createdAt.getFullYear() === now.getFullYear() &&
+        createdAt.getMonth() === now.getMonth() &&
+        createdAt.getDate() === now.getDate();
+
+      if (isFirstLogin) {
+        toast.success("登録おめでとうございます！🎉 \n学習記録をつけよう！", {
+          duration: 5000,
+          style: {
+            background: "#fff",
+            color: "#374151",
+            borderRadius: "12px",
+            border: "1px solid #F3F4F6",
+            padding: "12px 16px",
+            fontSize: "14px",
+            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+          },
+          iconTheme: {
+            primary: "#6366F1",
+            secondary: "#fff",
+          },
+        });
+      } else {
+        toast.success("おかえりなさい👋 \n今日もがんばりましょう！", {
+          duration: 4000,
+          style: {
+            background: "#fff",
+            color: "#374151",
+            borderRadius: "12px",
+            border: "1px solid #F3F4F6",
+            padding: "12px 16px",
+            fontSize: "14px",
+            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+          },
+          iconTheme: {
+            primary: "#6366F1",
+            secondary: "#fff",
+          },
+        });
+      }
+    }
+
     router.push("/dashboard");
     router.refresh();
   };
