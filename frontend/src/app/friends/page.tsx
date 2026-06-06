@@ -1,6 +1,7 @@
 "use client";
 
 import AppLayout from "@/components/layout/AppLayout";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { createClient } from "@/lib/supabase";
 import { Friendship, User } from "@/types";
 import clsx from "clsx";
@@ -13,6 +14,7 @@ type FriendWithStats = {
   id: string;
   display_name: string | null;
   email: string;
+  avatar_url?: string | null;
   monthly_minutes: number;
 };
 
@@ -30,14 +32,12 @@ export default function FriendsPage() {
   const [tab, setTab] = useState<"friends" | "ranking">("friends");
 
   const fetchFriends = async (userId: string) => {
-    // 承認済みフレンドを取得
     const { data: friendships } = await supabase
       .from("friendships")
       .select("*")
       .eq("status", "accepted")
       .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`);
 
-    // 申請中（受信）を取得
     const { data: received } = await supabase
       .from("friendships")
       .select("*, requester:requester_id(id, display_name, email)")
@@ -45,7 +45,6 @@ export default function FriendsPage() {
       .eq("status", "pending");
     setPendingReceived(received || []);
 
-    // 申請中（送信）を取得
     const { data: sent } = await supabase
       .from("friendships")
       .select("*, receiver:receiver_id(id, display_name, email)")
@@ -58,18 +57,16 @@ export default function FriendsPage() {
       return;
     }
 
-    // フレンドのIDを取得
     const friendIds = friendships.map((f) =>
       f.requester_id === userId ? f.receiver_id : f.requester_id,
     );
 
-    // フレンドのユーザー情報を取得
+    // avatar_url も含めて取得
     const { data: friendUsers } = await supabase
       .from("users")
-      .select("*")
+      .select("id, display_name, email, avatar_url")
       .in("id", friendIds);
 
-    // 今月の学習時間を取得
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       .toISOString()
@@ -88,10 +85,7 @@ export default function FriendsPage() {
           0,
         );
 
-        return {
-          ...friend,
-          monthly_minutes,
-        };
+        return { ...friend, monthly_minutes };
       }),
     );
 
@@ -110,7 +104,6 @@ export default function FriendsPage() {
         return;
       }
 
-      // 現在のユーザー情報取得
       const { data: userData } = await supabase
         .from("users")
         .select("*")
@@ -118,7 +111,6 @@ export default function FriendsPage() {
         .single();
       setCurrentUser(userData);
 
-      // 自分の今月の学習時間を取得
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString()
@@ -141,13 +133,11 @@ export default function FriendsPage() {
     fetchData();
   }, []);
 
-  // フレンド申請
   const handleSearch = async () => {
     if (!searchEmail.trim()) return;
     if (!currentUser) return;
     setSearching(true);
 
-    // メールアドレスでユーザーを検索
     const { data: targetUser } = await supabase
       .from("users")
       .select("*")
@@ -166,7 +156,6 @@ export default function FriendsPage() {
       return;
     }
 
-    // すでにフレンドか確認
     const { data: existing } = await supabase
       .from("friendships")
       .select("*")
@@ -185,7 +174,6 @@ export default function FriendsPage() {
       return;
     }
 
-    // フレンド申請を送信
     const { error } = await supabase.from("friendships").insert({
       requester_id: currentUser.id,
       receiver_id: targetUser.id,
@@ -204,40 +192,32 @@ export default function FriendsPage() {
     setSearching(false);
   };
 
-  // フレンド申請を承認
   const handleAccept = async (friendshipId: number) => {
     if (!currentUser) return;
-
     const { error } = await supabase
       .from("friendships")
       .update({ status: "accepted" })
       .eq("id", friendshipId);
-
     if (!error) {
       toast.success("フレンド申請を承認しました！🎉");
       await fetchFriends(currentUser.id);
     }
   };
 
-  // フレンド申請を拒否・削除
   const handleReject = async (friendshipId: number) => {
     if (!currentUser) return;
-
     const { error } = await supabase
       .from("friendships")
       .delete()
       .eq("id", friendshipId);
-
     if (!error) {
       toast.success("フレンド申請を拒否しました");
       await fetchFriends(currentUser.id);
     }
   };
 
-  // フレンドを削除
   const handleRemoveFriend = async (friendId: string) => {
     if (!currentUser) return;
-
     toast(
       (t) => (
         <div className="flex flex-col gap-2">
@@ -292,7 +272,6 @@ export default function FriendsPage() {
     return `${h}h ${m}m`;
   };
 
-  // 自分を含めたランキング
   const rankingList = currentUser
     ? [
         ...friends,
@@ -317,7 +296,6 @@ export default function FriendsPage() {
   return (
     <AppLayout>
       <div className="p-4 md:p-6 max-w-2xl mx-auto">
-        {/* ヘッダー */}
         <div className="mb-4">
           <h1 className="text-xl font-semibold text-gray-800">フレンド</h1>
           <p className="text-sm text-gray-400 mt-0.5">
@@ -359,13 +337,11 @@ export default function FriendsPage() {
             <div className="flex flex-col gap-2">
               {pendingReceived.map((f: Friendship) => (
                 <div key={f.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-medium text-indigo-600">
-                      {(f.requester?.display_name ||
-                        f.requester?.email ||
-                        "?")[0].toUpperCase()}
-                    </span>
-                  </div>
+                  <UserAvatar
+                    displayName={f.requester?.display_name}
+                    email={f.requester?.email}
+                    size="sm"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">
                       {f.requester?.display_name || f.requester?.email}
@@ -402,13 +378,11 @@ export default function FriendsPage() {
             <div className="flex flex-col gap-2">
               {pendingSent.map((f: Friendship) => (
                 <div key={f.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-medium text-gray-500">
-                      {(f.receiver?.display_name ||
-                        f.receiver?.email ||
-                        "?")[0].toUpperCase()}
-                    </span>
-                  </div>
+                  <UserAvatar
+                    displayName={f.receiver?.display_name}
+                    email={f.receiver?.email}
+                    size="sm"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-600 truncate">
                       {f.receiver?.display_name || f.receiver?.email}
@@ -470,11 +444,12 @@ export default function FriendsPage() {
             ) : (
               friends.map((friend) => (
                 <div key={friend.id} className="card flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-indigo-600">
-                      {(friend.display_name || friend.email)[0].toUpperCase()}
-                    </span>
-                  </div>
+                  <UserAvatar
+                    avatarUrl={friend.avatar_url}
+                    displayName={friend.display_name}
+                    email={friend.email}
+                    size="md"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">
                       {friend.display_name || friend.email}
@@ -533,11 +508,14 @@ export default function FriendsPage() {
                           ? "🥉"
                           : index + 1}
                   </div>
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-semibold text-indigo-600">
-                      {(friend.display_name || friend.email)[0].toUpperCase()}
-                    </span>
-                  </div>
+                  <UserAvatar
+                    avatarUrl={
+                      "avatar_url" in friend ? friend.avatar_url : undefined
+                    }
+                    displayName={friend.display_name}
+                    email={friend.email}
+                    size="sm"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">
                       {friend.display_name || friend.email}
