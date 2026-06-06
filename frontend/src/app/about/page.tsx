@@ -6,8 +6,16 @@ import Link from "next/link";
 
 const versionHistory = [
   {
+    version: "v1.3.0",
+    date: "2026年6月",
+    changes: [
+      "ユーザーアバター画像の登録・変更機能を追加",
+      "フレンド一覧・ランキングにアバター画像を表示",
+    ],
+  },
+  {
     version: "v1.2.0",
-    date: "2025年6月",
+    date: "2026年6月",
     changes: [
       "フレンド追加・申請機能を追加",
       "フレンドランキング機能を追加",
@@ -18,7 +26,7 @@ const versionHistory = [
   },
   {
     version: "v1.1.0",
-    date: "2025年5月",
+    date: "2026年5月",
     changes: [
       "TODO機能を追加",
       "カテゴリー管理機能を追加",
@@ -27,7 +35,7 @@ const versionHistory = [
   },
   {
     version: "v1.0.0",
-    date: "2025年4月",
+    date: "2026年4月",
     changes: [
       "Logly リリース",
       "ユーザー認証（登録・ログイン・メール認証）",
