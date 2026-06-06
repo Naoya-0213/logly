@@ -1,147 +1,156 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import AppLayout from '@/components/layout/AppLayout'
-import { User } from 'lucide-react'
-import toast from 'react-hot-toast'
+import AppLayout from "@/components/layout/AppLayout";
+import { createClient } from "@/lib/supabase";
+import { Info, User } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function SettingsPage() {
-  const router = useRouter()
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = createClient();
 
-  const [displayName, setDisplayName] = useState('')
-  const [email, setEmail] = useState('')
-  const [newEmail, setNewEmail] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [nameLoading, setNameLoading] = useState(false)
-  const [emailLoading, setEmailLoading] = useState(false)
-  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [nameLoading, setNameLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login')
-        return
+        router.push("/login");
+        return;
       }
 
       const { data } = await supabase
-        .from('users')
-        .select('display_name, email')
-        .eq('id', user.id)
-        .single()
+        .from("users")
+        .select("display_name, email")
+        .eq("id", user.id)
+        .single();
 
       if (data) {
-        setDisplayName(data.display_name || '')
-        setEmail(data.email || '')
+        setDisplayName(data.display_name || "");
+        setEmail(data.email || "");
       }
-    }
-    fetchUser()
-  }, [])
+    };
+    fetchUser();
+  }, []);
 
   // ユーザーネーム変更
   const handleNameUpdate = async () => {
     if (!displayName.trim()) {
-      toast.error('ユーザーネームを入力してください')
-      return
+      toast.error("ユーザーネームを入力してください");
+      return;
     }
     if (displayName.length > 20) {
-      toast.error('20文字以内で入力してください')
-      return
+      toast.error("20文字以内で入力してください");
+      return;
     }
 
-    setNameLoading(true)
+    setNameLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
 
     const { error } = await supabase
-      .from('users')
+      .from("users")
       .update({ display_name: displayName.trim() })
-      .eq('id', user.id)
+      .eq("id", user.id);
 
     if (error) {
-      toast.error('更新に失敗しました')
+      toast.error("更新に失敗しました");
     } else {
-      toast.success('ユーザーネームを更新しました！')
+      toast.success("ユーザーネームを更新しました！");
     }
-    setNameLoading(false)
-  }
+    setNameLoading(false);
+  };
 
   // メールアドレス変更
   const handleEmailUpdate = async () => {
     if (!newEmail.trim()) {
-      toast.error('メールアドレスを入力してください')
-      return
+      toast.error("メールアドレスを入力してください");
+      return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
-      toast.error('正しいメールアドレスを入力してください')
-      return
+      toast.error("正しいメールアドレスを入力してください");
+      return;
     }
 
-    setEmailLoading(true)
+    setEmailLoading(true);
 
-    const { error } = await supabase.auth.updateUser({ email: newEmail })
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
 
     if (error) {
-      toast.error('更新に失敗しました')
+      toast.error("更新に失敗しました");
     } else {
-      toast.success('確認メールを送信しました！')
-      setNewEmail('')
+      toast.success("確認メールを送信しました！");
+      setNewEmail("");
     }
-    setEmailLoading(false)
-  }
+    setEmailLoading(false);
+  };
 
   // パスワード変更
   const handlePasswordUpdate = async () => {
     if (!newPassword) {
-      toast.error('パスワードを入力してください')
-      return
+      toast.error("パスワードを入力してください");
+      return;
     }
     if (newPassword.length < 8) {
-      toast.error('8文字以上で入力してください')
-      return
+      toast.error("8文字以上で入力してください");
+      return;
     }
     if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      toast.error('英字と数字を含めてください')
-      return
+      toast.error("英字と数字を含めてください");
+      return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error('パスワードが一致しません')
-      return
+      toast.error("パスワードが一致しません");
+      return;
     }
 
-    setPasswordLoading(true)
+    setPasswordLoading(true);
 
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      toast.error('更新に失敗しました')
+      toast.error("更新に失敗しました");
     } else {
-      toast.success('パスワードを更新しました！')
-      setNewPassword('')
-      setConfirmPassword('')
+      toast.success("パスワードを更新しました！");
+      setNewPassword("");
+      setConfirmPassword("");
     }
-    setPasswordLoading(false)
-  }
+    setPasswordLoading(false);
+  };
 
   // ログアウト
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <AppLayout>
       <div className="p-4 md:p-6 max-w-lg mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-800">アカウント設定</h1>
-          <p className="text-sm text-gray-400 mt-0.5">プロフィールとセキュリティ設定</p>
+          <h1 className="text-xl font-semibold text-gray-800">
+            アカウント設定
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            プロフィールとセキュリティ設定
+          </p>
         </div>
 
         <div className="flex justify-center mb-6">
@@ -175,7 +184,7 @@ export default function SettingsPage() {
               disabled={nameLoading}
               className="btn-primary"
             >
-              {nameLoading ? '更新中...' : '更新する'}
+              {nameLoading ? "更新中..." : "更新する"}
             </button>
           </div>
         </div>
@@ -210,7 +219,7 @@ export default function SettingsPage() {
               disabled={emailLoading}
               className="btn-primary"
             >
-              {emailLoading ? '更新中...' : '更新する'}
+              {emailLoading ? "更新中..." : "更新する"}
             </button>
           </div>
         </div>
@@ -246,13 +255,13 @@ export default function SettingsPage() {
               disabled={passwordLoading}
               className="btn-primary"
             >
-              {passwordLoading ? '更新中...' : '更新する'}
+              {passwordLoading ? "更新中..." : "更新する"}
             </button>
           </div>
         </div>
 
         {/* ログアウト */}
-        <div className="card">
+        <div className="card mb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             アカウント操作
           </h2>
@@ -263,7 +272,23 @@ export default function SettingsPage() {
             ログアウト
           </button>
         </div>
+
+        {/* アプリ情報 */}
+        <Link
+          href="/about"
+          className="card flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <Info size={16} className="text-gray-400" />
+            <span className="text-sm text-gray-600">
+              アプリ情報・バージョン履歴
+            </span>
+          </div>
+          <span className="text-xs text-gray-300 group-hover:text-indigo-400 transition-colors">
+            ›
+          </span>
+        </Link>
       </div>
     </AppLayout>
-  )
+  );
 }
