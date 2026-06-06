@@ -23,24 +23,26 @@ export default function BottomTab() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around py-2 z-50">
-      {tabItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={clsx(
-              "flex flex-col items-center gap-1 px-3 py-1",
-              isActive ? "text-indigo-500" : "text-gray-400",
-            )}
-          >
-            <Icon size={20} />
-            <span className="text-xs">{item.label}</span>
-          </Link>
-        );
-      })}
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
+      <div className="flex items-stretch h-16">
+        {tabItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={clsx(
+                "flex-1 flex flex-col items-center justify-center gap-1",
+                isActive ? "text-indigo-500" : "text-gray-400",
+              )}
+            >
+              <Icon size={20} />
+              <span className="text-[10px]">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

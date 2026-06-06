@@ -1,10 +1,6 @@
 "use client";
 
 import clsx from "clsx";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
 import {
   CalendarDays,
   CheckSquare,
@@ -14,6 +10,9 @@ import {
   Tag,
   Users,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import NotificationBell from "./NotificationBell";
 
 const navItems = [
   { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboard },
@@ -30,8 +29,9 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-52 min-h-screen bg-white border-r border-gray-100 py-6 px-3 gap-1">
-      <div className="text-xl font-semibold text-indigo-500 px-3 pb-4 border-b border-gray-100 mb-2">
-        Logly
+      <div className="flex items-center justify-between px-3 pb-4 border-b border-gray-100 mb-2">
+        <span className="text-xl font-semibold text-indigo-500">Logly</span>
+        <NotificationBell />
       </div>
       {navItems.map((item) => {
         const Icon = item.icon;
