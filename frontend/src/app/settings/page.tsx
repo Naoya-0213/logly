@@ -1,19 +1,25 @@
 "use client";
 
 import AppLayout from "@/components/layout/AppLayout";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { useAvatar } from "@/hooks/useAvatar";
 import { createClient } from "@/lib/supabase";
-import { Info, User } from "lucide-react";
+import { Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { uploadAvatar, uploading } = useAvatar();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,21 +38,34 @@ export default function SettingsPage() {
         return;
       }
 
+      setUserId(user.id);
+
       const { data } = await supabase
         .from("users")
-        .select("display_name, email")
+        .select("display_name, email, avatar_url")
         .eq("id", user.id)
         .single();
 
       if (data) {
         setDisplayName(data.display_name || "");
         setEmail(data.email || "");
+        setAvatarUrl(data.avatar_url || null);
       }
     };
     fetchUser();
   }, []);
 
-  // ユーザーネーム変更
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+
+    const newUrl = await uploadAvatar(file, userId);
+    if (newUrl) {
+      setAvatarUrl(newUrl);
+    }
+    e.target.value = "";
+  };
+
   const handleNameUpdate = async () => {
     if (!displayName.trim()) {
       toast.error("ユーザーネームを入力してください");
@@ -56,19 +75,15 @@ export default function SettingsPage() {
       toast.error("20文字以内で入力してください");
       return;
     }
-
     setNameLoading(true);
-
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-
     const { error } = await supabase
       .from("users")
       .update({ display_name: displayName.trim() })
       .eq("id", user.id);
-
     if (error) {
       toast.error("更新に失敗しました");
     } else {
@@ -77,7 +92,6 @@ export default function SettingsPage() {
     setNameLoading(false);
   };
 
-  // メールアドレス変更
   const handleEmailUpdate = async () => {
     if (!newEmail.trim()) {
       toast.error("メールアドレスを入力してください");
@@ -88,11 +102,8 @@ export default function SettingsPage() {
       toast.error("正しいメールアドレスを入力してください");
       return;
     }
-
     setEmailLoading(true);
-
     const { error } = await supabase.auth.updateUser({ email: newEmail });
-
     if (error) {
       toast.error("更新に失敗しました");
     } else {
@@ -102,7 +113,6 @@ export default function SettingsPage() {
     setEmailLoading(false);
   };
 
-  // パスワード変更
   const handlePasswordUpdate = async () => {
     if (!newPassword) {
       toast.error("パスワードを入力してください");
@@ -120,11 +130,8 @@ export default function SettingsPage() {
       toast.error("パスワードが一致しません");
       return;
     }
-
     setPasswordLoading(true);
-
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-
     if (error) {
       toast.error("更新に失敗しました");
     } else {
@@ -135,7 +142,6 @@ export default function SettingsPage() {
     setPasswordLoading(false);
   };
 
-  // ログアウト
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
@@ -153,11 +159,37 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* アバター画像 */}
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
-            <User size={32} className="text-indigo-400" />
-          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="relative group"
+            aria-label="アバター画像を変更"
+          >
+            <UserAvatar
+              avatarUrl={avatarUrl}
+              displayName={displayName}
+              email={email}
+              size="lg"
+            />
+            <div className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-white text-xs font-medium">
+                {uploading ? "..." : "変更"}
+              </span>
+            </div>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
         </div>
+        <p className="text-center text-xs text-gray-400 -mt-4 mb-6">
+          タップして画像を変更
+        </p>
 
         {/* ユーザーネーム変更 */}
         <div className="card mb-4">
