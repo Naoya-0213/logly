@@ -26,7 +26,7 @@ const versionHistory = [
   },
   {
     version: "v1.1.0",
-    date: "2026年5月",
+    date: "2026年6月",
     changes: [
       "TODO機能を追加",
       "カテゴリー管理機能を追加",
@@ -35,7 +35,7 @@ const versionHistory = [
   },
   {
     version: "v1.0.0",
-    date: "2026年4月",
+    date: "2026年6月",
     changes: [
       "Logly リリース",
       "ユーザー認証（登録・ログイン・メール認証）",
