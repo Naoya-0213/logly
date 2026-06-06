@@ -20,6 +20,7 @@ export default function FriendsPage() {
   const router = useRouter();
   const supabase = createClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [myMonthlyMinutes, setMyMonthlyMinutes] = useState(0);
   const [friends, setFriends] = useState<FriendWithStats[]>([]);
   const [pendingReceived, setPendingReceived] = useState<Friendship[]>([]);
   const [pendingSent, setPendingSent] = useState<Friendship[]>([]);
@@ -116,6 +117,23 @@ export default function FriendsPage() {
         .eq("id", user.id)
         .single();
       setCurrentUser(userData);
+
+      // 自分の今月の学習時間を取得
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const { data: myRecords } = await supabase
+        .from("study_records")
+        .select("duration_minutes")
+        .eq("user_id", userData.id)
+        .gte("study_date", firstDay);
+      const myMinutes = (myRecords || []).reduce(
+        (sum: number, r: { duration_minutes: number }) =>
+          sum + r.duration_minutes,
+        0,
+      );
+      setMyMonthlyMinutes(myMinutes);
 
       await fetchFriends(user.id);
       setLoading(false);
@@ -276,7 +294,14 @@ export default function FriendsPage() {
 
   // 自分を含めたランキング
   const rankingList = currentUser
-    ? [...friends].sort((a, b) => b.monthly_minutes - a.monthly_minutes)
+    ? [
+        ...friends,
+        {
+          ...currentUser,
+          monthly_minutes: myMonthlyMinutes,
+          isMe: true,
+        },
+      ].sort((a, b) => b.monthly_minutes - a.monthly_minutes)
     : friends;
 
   if (loading) {
@@ -484,7 +509,10 @@ export default function FriendsPage() {
               </div>
             ) : (
               rankingList.map((friend, index) => (
-                <div key={friend.id} className="card flex items-center gap-3">
+                <div
+                  key={friend.id}
+                  className={`card flex items-center gap-3 ${"isMe" in friend && friend.isMe ? "border border-indigo-300 bg-indigo-50/50" : ""}`}
+                >
                   <div
                     className={clsx(
                       "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
