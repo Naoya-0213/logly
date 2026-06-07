@@ -185,7 +185,7 @@ export default function RecordsPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-2xl mx-auto">
+      <div className="p-4 md:p-6 max-w-2xl mx-auto w-full">
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -202,7 +202,7 @@ export default function RecordsPage() {
         </div>
 
         {/* 累計合計時間 */}
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4 flex justify-between items-center">
+        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4 flex justify-between items-center overflow-hidden">
           <span className="text-sm text-indigo-500 font-medium">
             累計合計時間
           </span>
@@ -215,8 +215,8 @@ export default function RecordsPage() {
         </div>
 
         {/* 検索・絞り込み */}
-        <div className="flex gap-2 mb-4">
-          <div className="flex-1 relative">
+        <div className="flex gap-2 mb-4 w-full min-w-0">
+          <div className="flex-1 relative min-w-0">
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -232,7 +232,7 @@ export default function RecordsPage() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input-field w-36"
+            className="input-field w-28 flex-shrink-0"
           >
             <option value="">すべて</option>
             {categories.map((cat) => (
