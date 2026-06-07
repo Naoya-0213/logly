@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   title: "Logly - 学習記録アプリ",
   description: "毎日の学習を記録して、成長を可視化しよう",
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
     apple: "/apple-touch-icon.png",
   },
 };
