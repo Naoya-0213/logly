@@ -9,14 +9,19 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const COLORS = [
-  "#6366F1", // インディゴ
-  "#34D399", // ミント
-  "#F472B6", // ピンク
-  "#FBBF24", // イエロー
   "#F87171", // レッド
-  "#60A5FA", // ブルー
-  "#A78BFA", // バイオレット
+  "#FCA5A5", // ライトレッド
   "#FB923C", // オレンジ
+  "#FBBF24", // イエロー
+  "#4ADE80", // グリーン
+  "#34D399", // ミント
+  "#2DD4BF", // ティール
+  "#60A5FA", // ブルー
+  "#93C5FD", // ライトブルー
+  "#6366F1", // インディゴ
+  "#A78BFA", // バイオレット
+  "#E879F9", // フューシャ
+  "#F472B6", // ピンク
 ];
 
 export default function CategoriesPage() {
@@ -28,7 +33,7 @@ export default function CategoriesPage() {
   // 新規追加フォーム
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState(COLORS[0]);
+  const [newColor, setNewColor] = useState("#F87171");
   const [adding, setAdding] = useState(false);
 
   // 編集
