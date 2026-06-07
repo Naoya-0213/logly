@@ -215,7 +215,7 @@ export default function CategoriesPage() {
               className="input-field mb-3"
               autoFocus
             />
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3">
               {COLORS.map((color) => (
                 <button
                   key={color}

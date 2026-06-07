@@ -158,7 +158,15 @@ export default function NewRecordPage() {
             </div>
 
             <div>
-              <label className="label">カテゴリー</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label">カテゴリー</label>
+                <Link
+                  href="/categories"
+                  className="text-xs text-indigo-500 hover:text-indigo-600"
+                >
+                  ＋ カテゴリーを追加
+                </Link>
+              </div>
               <select {...register("category_id")} className="input-field">
                 <option value="">カテゴリーなし</option>
                 {categories.map((cat) => (

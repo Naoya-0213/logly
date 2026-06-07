@@ -4,7 +4,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { useAvatar } from "@/hooks/useAvatar";
 import { createClient } from "@/lib/supabase";
-import { Info } from "lucide-react";
+import { Info, Tag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -304,6 +304,20 @@ export default function SettingsPage() {
             ログアウト
           </button>
         </div>
+
+        {/* カテゴリー管理 */}
+        <Link
+          href="/categories"
+          className="card flex items-center justify-between group mb-4"
+        >
+          <div className="flex items-center gap-3">
+            <Tag size={16} className="text-gray-400" />
+            <span className="text-sm text-gray-600">カテゴリー管理</span>
+          </div>
+          <span className="text-xs text-gray-300 group-hover:text-indigo-400 transition-colors">
+            ›
+          </span>
+        </Link>
 
         {/* アプリ情報 */}
         <Link
