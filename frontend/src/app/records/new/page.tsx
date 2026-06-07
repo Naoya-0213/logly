@@ -23,10 +23,17 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+type RecentRecord = {
+  content: string;
+  category_id: number | null;
+  categories?: { name: string; color: string } | null;
+};
+
 export default function NewRecordPage() {
   const router = useRouter();
   const supabase = createClient();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoursInput, setHoursInput] = useState<string>("0");
@@ -61,15 +68,45 @@ export default function NewRecordPage() {
         router.push("/login");
         return;
       }
-      const { data } = await supabase
+
+      const { data: categoriesData } = await supabase
         .from("categories")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true });
-      setCategories(data || []);
+      setCategories(categoriesData || []);
+
+      // 直近3件の記録を取得（重複なし）
+      const { data: recordsData } = await supabase
+        .from("study_records")
+        .select("content, category_id, categories(name, color)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (recordsData) {
+        // 同じcontentの重複を除去して3件に絞る
+        const seen = new Set<string>();
+        const unique: RecentRecord[] = [];
+        for (const r of recordsData as unknown as RecentRecord[]) {
+          if (!seen.has(r.content) && unique.length < 3) {
+            seen.add(r.content);
+            unique.push(r);
+          }
+        }
+        setRecentRecords(unique);
+      }
     };
     fetchData();
   }, []);
+
+  const handleRecentSelect = (record: RecentRecord) => {
+    setValue("content", record.content);
+    setValue(
+      "category_id",
+      record.category_id ? String(record.category_id) : "",
+    );
+  };
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -115,10 +152,7 @@ export default function NewRecordPage() {
         fontSize: "14px",
         boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
       },
-      iconTheme: {
-        primary: "#6366F1",
-        secondary: "#fff",
-      },
+      iconTheme: { primary: "#6366F1", secondary: "#fff" },
     });
     router.push("/records");
   };
@@ -192,6 +226,41 @@ export default function NewRecordPage() {
                   {errors.content.message}
                 </p>
               )}
+
+              {/* 最近の記録 */}
+              {recentRecords.length > 0 && (
+                <div className="mt-2 ml-1 pl-3 border-l-2 border-indigo-100">
+                  <p className="text-xs text-gray-400 mb-1.5">
+                    最近の記録から追加：
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {recentRecords.map((record, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleRecentSelect(record)}
+                        className="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <span className="text-sm text-gray-700 truncate flex-1">
+                          {record.content}
+                        </span>
+                        <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                          <div
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                record.categories?.color || "#9CA3AF",
+                            }}
+                          />
+                          <span className="text-xs text-gray-400">
+                            {record.categories?.name || "カテゴリーなし"}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -225,11 +294,10 @@ export default function NewRecordPage() {
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");
                         setHoursInput(raw);
-                        const val = Math.min(
-                          23,
-                          Math.max(0, parseInt(raw) || 0),
+                        setValue(
+                          "duration_hours",
+                          Math.min(23, Math.max(0, parseInt(raw) || 0)),
                         );
-                        setValue("duration_hours", val);
                       }}
                       onBlur={() => {
                         const val = Math.min(
@@ -280,11 +348,10 @@ export default function NewRecordPage() {
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");
                         setMinutesInput(raw);
-                        const val = Math.min(
-                          59,
-                          Math.max(0, parseInt(raw) || 0),
+                        setValue(
+                          "duration_minutes",
+                          Math.min(59, Math.max(0, parseInt(raw) || 0)),
                         );
-                        setValue("duration_minutes", val);
                       }}
                       onBlur={() => {
                         const val = Math.min(
@@ -310,7 +377,6 @@ export default function NewRecordPage() {
                   </div>
                 </div>
 
-                {/* PC：合計を右端に */}
                 <span className="ml-auto text-sm text-indigo-500 font-medium hidden md:block pl-4 border-l border-gray-200">
                   合計 {hours * 60 + minutes}分
                 </span>
