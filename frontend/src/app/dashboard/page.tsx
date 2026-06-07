@@ -55,61 +55,51 @@ function formatDate(date: Date, withDay = false): string {
   return withDay ? `${base}(${DAY_LABELS[date.getDay()]})` : base;
 }
 
-function getWeekRange(weekOffset: number): {
-  start: Date;
-  end: Date;
-  labelWithDay: string;
-  startWithDay: string;
-  endWithDay: string;
+function getMonthWeeks(monthOffset: number): {
   startStr: string;
-} {
+  endStr: string;
+  label: string;
+  startDate: Date;
+}[] {
   const now = new Date();
-  const thisWeekStart = getWeekStart(now);
-  const start = new Date(thisWeekStart);
-  start.setDate(start.getDate() + weekOffset * 7);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  return {
-    start,
-    end,
-    labelWithDay: `${formatDate(start, true)}〜${formatDate(end, true)}`,
-    startWithDay: formatDate(start, true),
-    endWithDay: formatDate(end, true),
-    startStr: start.toISOString().split("T")[0],
-  };
+  const year = now.getFullYear();
+  const month = now.getMonth() + monthOffset;
+  const targetDate = new Date(year, month, 1);
+  const targetYear = targetDate.getFullYear();
+  const targetMonth = targetDate.getMonth();
+
+  const firstDay = new Date(targetYear, targetMonth, 1);
+  const lastDay = new Date(targetYear, targetMonth + 1, 0);
+
+  const weeks: {
+    startStr: string;
+    endStr: string;
+    label: string;
+    startDate: Date;
+  }[] = [];
+
+  let weekStart = getWeekStart(firstDay);
+
+  while (weekStart <= lastDay) {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const startStr = weekStart.toISOString().split("T")[0];
+    const endStr = weekEnd.toISOString().split("T")[0];
+    const label = `${formatDate(weekStart, true)}〜${formatDate(weekEnd, true)}`;
+
+    weeks.push({ startStr, endStr, label, startDate: new Date(weekStart) });
+
+    weekStart = new Date(weekStart);
+    weekStart.setDate(weekStart.getDate() + 7);
+  }
+
+  return weeks;
 }
 
-const MobileXAxisTick = ({
-  x,
-  y,
-  payload,
-}: {
-  x?: number | string;
-  y?: number | string;
-  payload?: { value: string };
-}) => {
-  const xNum = Number(x);
-  const yNum = Number(y);
-  if (!payload || isNaN(xNum) || isNaN(yNum)) return null;
-  const parts = payload.value.split("|");
-  return (
-    <g transform={`translate(${xNum},${yNum})`}>
-      {parts.map((part, i) => (
-        <text
-          key={i}
-          x={0}
-          y={0}
-          dy={i === 0 ? 12 : i === 1 ? 22 : 32}
-          textAnchor="middle"
-          fill={part === "｜" ? "#D1D5DB" : "#9CA3AF"}
-          fontSize={9}
-        >
-          {part === "｜" ? "|" : part}
-        </text>
-      ))}
-    </g>
-  );
-};
+function getCurrentWeekStartStr(): string {
+  return getWeekStart(new Date()).toISOString().split("T")[0];
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -118,7 +108,7 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("thisMonth");
-  const [weekPageOffset, setWeekPageOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
   const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(
     null,
   );
@@ -156,37 +146,43 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const weekCount = isMobile ? 4 : 5;
-
-  const weeklyData: WeekData[] = Array.from({ length: weekCount }, (_, i) => {
-    const weekOffset = weekPageOffset - i;
-    const { start, end, startWithDay, endWithDay, startStr } =
-      getWeekRange(weekOffset);
-    const endStr = end.toISOString().split("T")[0];
-    const mins = records
-      .filter((r) => r.study_date >= startStr && r.study_date <= endStr)
-      .reduce((sum, r) => sum + r.duration_minutes, 0);
-    const label = isMobile
-      ? `${startWithDay}|｜|${endWithDay}`
-      : `${startWithDay}〜${endWithDay}`;
-    return {
-      label,
-      hours: Math.round((mins / 60) * 10) / 10,
-      minutes: mins,
-      weekOffset,
-      isSelected: selectedWeekStart === startStr,
-      isCurrentWeek: weekOffset === 0,
-    };
+  const now = new Date();
+  const displayDate = new Date(
+    now.getFullYear(),
+    now.getMonth() + monthOffset,
+    1,
+  );
+  const monthLabel = displayDate.toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
   });
 
-  const newestWeek = getWeekRange(weekPageOffset);
-  const oldestWeek = getWeekRange(weekPageOffset - (weekCount - 1));
-  const periodNavLabel = `${newestWeek.endWithDay}〜${oldestWeek.startWithDay}`;
+  const monthWeeks = getMonthWeeks(monthOffset);
+  const currentWeekStartStr = getCurrentWeekStartStr();
+
+  const weeklyData: WeekData[] = monthWeeks.map((week) => {
+    const mins = records
+      .filter(
+        (r) => r.study_date >= week.startStr && r.study_date <= week.endStr,
+      )
+      .reduce((sum, r) => sum + r.duration_minutes, 0);
+    return {
+      label: week.label,
+      hours: Math.round((mins / 60) * 10) / 10,
+      minutes: mins,
+      weekOffset: 0,
+      isSelected: selectedWeekStart === week.startStr,
+      isCurrentWeek: week.startStr === currentWeekStartStr,
+    };
+  });
 
   const handleBarClick = (data: BarRectangleItem) => {
     const payload = data.payload as WeekData | undefined;
     if (!payload) return;
-    const { startStr } = getWeekRange(payload.weekOffset);
+    const idx = weeklyData.findIndex((w) => w.label === payload.label);
+    if (idx === -1) return;
+    const startStr = monthWeeks[idx]?.startStr;
+    if (!startStr) return;
     setSelectedWeekStart((prev) => (prev === startStr ? null : startStr));
   };
 
@@ -200,19 +196,19 @@ export default function DashboardPage() {
         (r) => r.study_date >= selectedWeekStart && r.study_date <= endStr,
       );
     }
-    const now = new Date();
+    const n = new Date();
     if (period === "all") return records;
     if (period === "thisMonth") {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+      const firstDay = new Date(n.getFullYear(), n.getMonth(), 1)
         .toISOString()
         .split("T")[0];
       return records.filter((r) => r.study_date >= firstDay);
     }
     if (period === "lastMonth") {
-      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const firstDay = new Date(n.getFullYear(), n.getMonth() - 1, 1)
         .toISOString()
         .split("T")[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+      const lastDay = new Date(n.getFullYear(), n.getMonth(), 0)
         .toISOString()
         .split("T")[0];
       return records.filter(
@@ -220,7 +216,7 @@ export default function DashboardPage() {
       );
     }
     if (period === "last3Months") {
-      const firstDay = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+      const firstDay = new Date(n.getFullYear(), n.getMonth() - 2, 1)
         .toISOString()
         .split("T")[0];
       return records.filter((r) => r.study_date >= firstDay);
@@ -302,7 +298,7 @@ export default function DashboardPage() {
               ダッシュボード
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">
-              {new Date().toLocaleDateString("ja-JP", {
+              {now.toLocaleDateString("ja-JP", {
                 year: "numeric",
                 month: "long",
               })}
@@ -387,10 +383,20 @@ export default function DashboardPage() {
               週別学習時間
             </h2>
             <div className="flex items-center gap-2">
-              {/* 左矢印＝過去へ */}
+              {monthOffset < 0 && (
+                <button
+                  onClick={() => {
+                    setMonthOffset(0);
+                    setSelectedWeekStart(null);
+                  }}
+                  className="text-xs font-medium text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                >
+                  今月
+                </button>
+              )}
               <button
                 onClick={() => {
-                  setWeekPageOffset((p) => p + weekCount);
+                  setMonthOffset((p) => p - 1);
                   setSelectedWeekStart(null);
                 }}
                 className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
@@ -398,14 +404,15 @@ export default function DashboardPage() {
               >
                 <ChevronLeft size={14} />
               </button>
-              <span className="text-xs text-gray-400">{periodNavLabel}</span>
-              {/* 右矢印＝未来へ */}
+              <span className="text-xs text-gray-600 font-medium">
+                {monthLabel}
+              </span>
               <button
                 onClick={() => {
-                  setWeekPageOffset((p) => p - weekCount);
+                  setMonthOffset((p) => p + 1);
                   setSelectedWeekStart(null);
                 }}
-                disabled={weekPageOffset < weekCount}
+                disabled={monthOffset >= 0}
                 className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
                 aria-label="未来へ"
               >
@@ -414,67 +421,123 @@ export default function DashboardPage() {
             </div>
           </div>
           <div onMouseDown={(e) => e.preventDefault()}>
-            <ResponsiveContainer width="100%" height={isMobile ? 190 : 160}>
-              <BarChart
-                data={weeklyData}
-                barSize={isMobile ? 28 : 36}
-                margin={{ bottom: isMobile ? 40 : 0 }}
+            {isMobile ? (
+              <ResponsiveContainer
+                width="100%"
+                height={Math.max(weeklyData.length * 44, 160)}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#F3F4F6"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="label"
-                  axisLine={false}
-                  tickLine={false}
-                  interval={0}
-                  tick={
-                    isMobile
-                      ? (props) => <MobileXAxisTick {...props} />
-                      : { fontSize: 9, fill: "#9CA3AF" }
-                  }
-                  height={isMobile ? 50 : 30}
-                />
-                <YAxis
-                  width={30}
-                  tick={{ fontSize: 10, fill: "#9CA3AF" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: number) => `${v}h`}
-                />
-                <Tooltip
-                  cursor={{ fill: "rgba(99,102,241,0.05)" }}
-                  formatter={(value) => [`${Number(value)}h`, "学習時間"]}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid #F3F4F6",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar
-                  dataKey="hours"
-                  radius={[4, 4, 0, 0]}
-                  onClick={handleBarClick}
-                  activeBar={false}
-                  style={{ cursor: "pointer" }}
+                <BarChart
+                  data={weeklyData}
+                  layout="vertical"
+                  barSize={20}
+                  margin={{ top: 0, right: 8, bottom: 0, left: -10 }}
                 >
-                  {weeklyData.map((entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={
-                        entry.isSelected
-                          ? "#4F46E5"
-                          : selectedWeekStart === null && entry.weekOffset === 0
-                            ? "#6366F1"
-                            : "#C7D2FE"
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F3F4F6"
+                    horizontal={false}
+                  />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => `${v}h`}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="label"
+                    tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={130}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                    formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #F3F4F6",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="hours"
+                    radius={[0, 4, 4, 0]}
+                    onClick={handleBarClick}
+                    activeBar={false}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {weeklyData.map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={
+                          entry.isSelected
+                            ? "#4F46E5"
+                            : entry.isCurrentWeek && monthOffset === 0
+                              ? "#6366F1"
+                              : "#C7D2FE"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={weeklyData} barSize={32}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F3F4F6"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                    height={30}
+                  />
+                  <YAxis
+                    width={30}
+                    tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => `${v}h`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                    formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #F3F4F6",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="hours"
+                    radius={[4, 4, 0, 0]}
+                    onClick={handleBarClick}
+                    activeBar={false}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {weeklyData.map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={
+                          entry.isSelected
+                            ? "#4F46E5"
+                            : entry.isCurrentWeek && monthOffset === 0
+                              ? "#6366F1"
+                              : "#C7D2FE"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
