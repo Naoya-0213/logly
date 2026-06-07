@@ -68,3 +68,12 @@ export type FriendWithStats = {
   email: string;
   monthly_minutes: number;
 };
+
+export type WeekData = {
+  label: string;
+  hours: number;
+  minutes: number;
+  weekOffset: number;
+  isSelected: boolean;
+  isCurrentWeek: boolean;
+};
