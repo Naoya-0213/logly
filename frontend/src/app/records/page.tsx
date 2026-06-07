@@ -139,6 +139,21 @@ export default function RecordsPage() {
     return matchSearch && matchCategory;
   });
 
+  // 絞り込み結果の合計
+  const filteredTotalMinutes = filteredRecords.reduce(
+    (sum, r) => sum + r.duration_minutes,
+    0,
+  );
+  const filteredTotalHours = Math.floor(filteredTotalMinutes / 60);
+  const filteredTotalMins = filteredTotalMinutes % 60;
+  const isFiltered = searchQuery !== "" || selectedCategory !== "";
+  const filterLabel =
+    selectedCategory !== ""
+      ? (categories.find((c) => c.id === Number(selectedCategory))?.name ?? "")
+      : searchQuery !== ""
+        ? `「${searchQuery}」`
+        : "";
+
   // 日付ごとにグループ化
   const groupedRecords = filteredRecords.reduce(
     (groups, record) => {
@@ -234,6 +249,18 @@ export default function RecordsPage() {
             ))}
           </select>
         </div>
+
+        {/* 絞り込み合計バー */}
+        {isFiltered && (
+          <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-2 mb-4">
+            <span className="text-xs text-indigo-500">
+              {filterLabel}　{filteredRecords.length}件
+            </span>
+            <span className="text-sm font-semibold text-indigo-600">
+              {filteredTotalHours}h {filteredTotalMins}m
+            </span>
+          </div>
+        )}
 
         {/* 記録一覧 */}
         {Object.keys(groupedRecords).length === 0 ? (
