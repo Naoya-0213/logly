@@ -6,6 +6,15 @@ import Link from "next/link";
 
 const versionHistory = [
   {
+    version: "v1.5.0",
+    date: "2026年6月",
+    changes: [
+      "履歴一覧にカテゴリー別・キーワード別の合計時間表示を追加",
+      "カテゴリーなしのドット色をグレーに統一",
+      "ダッシュボードのホバー表示を改善（日付非表示・モバイル無効化）",
+    ],
+  },
+  {
     version: "v1.4.0",
     date: "2026年6月",
     changes: [
