@@ -208,9 +208,9 @@ export default function RecordsPage() {
           </span>
           <span className="text-2xl font-semibold text-indigo-700">
             {totalHours}
-            <span className="text-sm font-normal">h </span>
+            <span className="text-sm font-normal"> h </span>
             {totalMins}
-            <span className="text-sm font-normal">m</span>
+            <span className="text-sm font-normal"> m</span>
           </span>
         </div>
 

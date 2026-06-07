@@ -12,7 +12,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-semibold text-indigo-500">Logly</span>
           <NotificationBell />
         </header>
-        <main className="flex-1 pb-20 md:pb-0 overflow-y-auto">{children}</main>
+        <main className="flex-1 pb-20 md:pb-0 overflow-y-auto overflow-x-hidden">
+          {children}
+        </main>
       </div>
       <BottomTab />
     </div>
