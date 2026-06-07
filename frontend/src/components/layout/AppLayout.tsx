@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         {/* モバイルヘッダー */}
@@ -12,7 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-semibold text-indigo-500">Logly</span>
           <NotificationBell />
         </header>
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        <main className="flex-1 pb-20 md:pb-0 overflow-y-auto">{children}</main>
       </div>
       <BottomTab />
     </div>
