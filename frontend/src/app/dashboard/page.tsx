@@ -430,7 +430,7 @@ export default function DashboardPage() {
                   data={weeklyData}
                   layout="vertical"
                   barSize={20}
-                  margin={{ top: 0, right: 8, bottom: 0, left: -10 }}
+                  margin={{ top: 0, right: 8, bottom: 0, left: -20 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -447,10 +447,10 @@ export default function DashboardPage() {
                   <YAxis
                     type="category"
                     dataKey="label"
-                    tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                    tick={{ fontSize: 9, fill: "#9CA3AF", textAnchor: "end" }}
                     axisLine={false}
                     tickLine={false}
-                    width={130}
+                    width={110}
                   />
                   {!isMobile && (
                     <Tooltip
