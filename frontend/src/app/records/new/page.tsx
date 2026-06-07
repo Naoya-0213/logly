@@ -29,6 +29,8 @@ export default function NewRecordPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hoursInput, setHoursInput] = useState<string>("0");
+  const [minutesInput, setMinutesInput] = useState<string>("30");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -193,28 +195,59 @@ export default function NewRecordPage() {
             </div>
 
             <div>
-              <label className="label">勉強時間</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label">勉強時間</label>
+                <span className="text-xs text-indigo-500 font-medium md:hidden">
+                  合計 {hours * 60 + minutes}分
+                </span>
+              </div>
               <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-white">
+                {/* 時間 */}
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xs text-gray-400">時間</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        setValue("duration_hours", Math.max(0, hours - 1))
-                      }
+                      onClick={() => {
+                        const val = Math.max(0, hours - 1);
+                        setValue("duration_hours", val);
+                        setHoursInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
                     >
                       −
                     </button>
-                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">
-                      {hours}
-                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={hoursInput}
+                      onFocus={() => setHoursInput("")}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, "");
+                        setHoursInput(raw);
+                        const val = Math.min(
+                          23,
+                          Math.max(0, parseInt(raw) || 0),
+                        );
+                        setValue("duration_hours", val);
+                      }}
+                      onBlur={() => {
+                        const val = Math.min(
+                          23,
+                          Math.max(0, parseInt(hoursInput) || 0),
+                        );
+                        setValue("duration_hours", val);
+                        setHoursInput(String(val));
+                      }}
+                      className="w-8 text-center text-base font-semibold text-gray-800 border border-indigo-300 rounded-lg bg-indigo-50 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    />
                     <button
                       type="button"
-                      onClick={() =>
-                        setValue("duration_hours", Math.min(23, hours + 1))
-                      }
+                      onClick={() => {
+                        const val = Math.min(23, hours + 1);
+                        setValue("duration_hours", val);
+                        setHoursInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
                     >
                       +
@@ -222,28 +255,54 @@ export default function NewRecordPage() {
                   </div>
                 </div>
 
-                <span className="text-gray-400 text-lg">:</span>
+                <span className="text-gray-400 text-lg mt-4">:</span>
 
+                {/* 分 */}
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xs text-gray-400">分</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        setValue("duration_minutes", Math.max(0, minutes - 5))
-                      }
+                      onClick={() => {
+                        const val = Math.max(0, minutes - 1);
+                        setValue("duration_minutes", val);
+                        setMinutesInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
                     >
                       −
                     </button>
-                    <span className="text-xl font-semibold text-gray-800 w-6 text-center">
-                      {minutes}
-                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={minutesInput}
+                      onFocus={() => setMinutesInput("")}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, "");
+                        setMinutesInput(raw);
+                        const val = Math.min(
+                          59,
+                          Math.max(0, parseInt(raw) || 0),
+                        );
+                        setValue("duration_minutes", val);
+                      }}
+                      onBlur={() => {
+                        const val = Math.min(
+                          59,
+                          Math.max(0, parseInt(minutesInput) || 0),
+                        );
+                        setValue("duration_minutes", val);
+                        setMinutesInput(String(val));
+                      }}
+                      className="w-8 text-center text-base font-semibold text-gray-800 border border-indigo-300 rounded-lg bg-indigo-50 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    />
                     <button
                       type="button"
-                      onClick={() =>
-                        setValue("duration_minutes", Math.min(55, minutes + 5))
-                      }
+                      onClick={() => {
+                        const val = Math.min(59, minutes + 1);
+                        setValue("duration_minutes", val);
+                        setMinutesInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
                     >
                       +
@@ -251,7 +310,8 @@ export default function NewRecordPage() {
                   </div>
                 </div>
 
-                <span className="ml-auto text-sm text-gray-400">
+                {/* PC：合計を右端に */}
+                <span className="ml-auto text-sm text-indigo-500 font-medium hidden md:block pl-4 border-l border-gray-200">
                   合計 {hours * 60 + minutes}分
                 </span>
               </div>
