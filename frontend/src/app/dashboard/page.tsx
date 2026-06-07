@@ -345,9 +345,9 @@ export default function DashboardPage() {
             </div>
             <div className="text-2xl font-semibold text-gray-800">
               {totalHours}
-              <span className="text-sm font-normal text-gray-400">h </span>
+              <span className="text-sm font-normal text-gray-400"> h </span>
               {totalMins}
-              <span className="text-sm font-normal text-gray-400">m</span>
+              <span className="text-sm font-normal text-gray-400"> m </span>
             </div>
           </div>
           <div className="card">
@@ -357,9 +357,9 @@ export default function DashboardPage() {
             </div>
             <div className="text-2xl font-semibold text-gray-800">
               {Math.floor(todayMinutes / 60)}
-              <span className="text-sm font-normal text-gray-400">h </span>
+              <span className="text-sm font-normal text-gray-400"> h </span>
               {todayMinutes % 60}
-              <span className="text-sm font-normal text-gray-400">m</span>
+              <span className="text-sm font-normal text-gray-400"> m </span>
             </div>
           </div>
           <div className="card col-span-2 md:col-span-1">
