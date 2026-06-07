@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "毎日の学習を記録して、成長を可視化しよう",
   icons: {
     icon: "/favicon.svg",
-    apple: "/apple-touch-icon.svg",
+    apple: "/apple-touch-icon.png",
   },
 };
 
