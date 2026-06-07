@@ -272,7 +272,7 @@ export default function DashboardPage() {
           const start = new Date(selectedWeekStart);
           const end = new Date(start);
           end.setDate(end.getDate() + 6);
-          return `${formatDate(start, true)}〜${formatDate(end, true)}`;
+          return `${formatDate(start)}〜${formatDate(end)}`;
         })()
       : null;
 
