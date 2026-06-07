@@ -39,6 +39,8 @@ const periodLabels: Record<Period, string> = {
   all: "全期間",
 };
 
+const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -48,14 +50,18 @@ function getWeekStart(date: Date): Date {
   return d;
 }
 
-function formatDate(date: Date): string {
-  return `${date.getMonth() + 1}/${date.getDate()}`;
+function formatDate(date: Date, withDay = false): string {
+  const base = `${date.getMonth() + 1}/${date.getDate()}`;
+  return withDay ? `${base}(${DAY_LABELS[date.getDay()]})` : base;
 }
 
 function getWeekRange(weekOffset: number): {
   start: Date;
   end: Date;
-  label: string;
+  labelWithDay: string;
+  startWithDay: string;
+  endWithDay: string;
+  startStr: string;
 } {
   const now = new Date();
   const thisWeekStart = getWeekStart(now);
@@ -66,9 +72,44 @@ function getWeekRange(weekOffset: number): {
   return {
     start,
     end,
-    label: `${formatDate(start)}〜${formatDate(end)}`,
+    labelWithDay: `${formatDate(start, true)}〜${formatDate(end, true)}`,
+    startWithDay: formatDate(start, true),
+    endWithDay: formatDate(end, true),
+    startStr: start.toISOString().split("T")[0],
   };
 }
+
+const MobileXAxisTick = ({
+  x,
+  y,
+  payload,
+}: {
+  x?: number | string;
+  y?: number | string;
+  payload?: { value: string };
+}) => {
+  const xNum = Number(x);
+  const yNum = Number(y);
+  if (!payload || isNaN(xNum) || isNaN(yNum)) return null;
+  const parts = payload.value.split("|");
+  return (
+    <g transform={`translate(${xNum},${yNum})`}>
+      {parts.map((part, i) => (
+        <text
+          key={i}
+          x={0}
+          y={0}
+          dy={i === 0 ? 12 : i === 1 ? 22 : 32}
+          textAnchor="middle"
+          fill={part === "｜" ? "#D1D5DB" : "#9CA3AF"}
+          fontSize={9}
+        >
+          {part === "｜" ? "|" : part}
+        </text>
+      ))}
+    </g>
+  );
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -78,9 +119,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("thisMonth");
   const [weekPageOffset, setWeekPageOffset] = useState(0);
-  const [selectedWeekOffset, setSelectedWeekOffset] = useState<number | null>(
+  const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(
     null,
   );
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,18 +140,15 @@ export default function DashboardPage() {
         router.push("/login");
         return;
       }
-
       const { data: recordsData } = await supabase
         .from("study_records")
         .select("*, categories(*)")
         .eq("user_id", user.id)
         .order("study_date", { ascending: false });
-
       const { data: categoriesData } = await supabase
         .from("categories")
         .select("*")
         .eq("user_id", user.id);
-
       setRecords(recordsData || []);
       setCategories(categoriesData || []);
       setLoading(false);
@@ -110,41 +156,48 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  // 週次グラフデータ（今週が一番左）
-  const weeklyData: WeekData[] = Array.from({ length: 4 }, (_, i) => {
+  const weekCount = isMobile ? 4 : 5;
+
+  const weeklyData: WeekData[] = Array.from({ length: weekCount }, (_, i) => {
     const weekOffset = weekPageOffset - i;
-    const { start, end, label } = getWeekRange(weekOffset);
-    const startStr = start.toISOString().split("T")[0];
+    const { start, end, startWithDay, endWithDay, startStr } =
+      getWeekRange(weekOffset);
     const endStr = end.toISOString().split("T")[0];
     const mins = records
       .filter((r) => r.study_date >= startStr && r.study_date <= endStr)
       .reduce((sum, r) => sum + r.duration_minutes, 0);
+    const label = isMobile
+      ? `${startWithDay}|｜|${endWithDay}`
+      : `${startWithDay}〜${endWithDay}`;
     return {
       label,
       hours: Math.round((mins / 60) * 10) / 10,
       minutes: mins,
       weekOffset,
-      isSelected: selectedWeekOffset === weekOffset,
+      isSelected: selectedWeekStart === startStr,
       isCurrentWeek: weekOffset === 0,
     };
   });
 
+  const newestWeek = getWeekRange(weekPageOffset);
+  const oldestWeek = getWeekRange(weekPageOffset - (weekCount - 1));
+  const periodNavLabel = `${newestWeek.endWithDay}〜${oldestWeek.startWithDay}`;
+
   const handleBarClick = (data: BarRectangleItem) => {
     const payload = data.payload as WeekData | undefined;
-    if (payload) {
-      setSelectedWeekOffset((prev) =>
-        prev === payload.weekOffset ? null : payload.weekOffset,
-      );
-    }
+    if (!payload) return;
+    const { startStr } = getWeekRange(payload.weekOffset);
+    setSelectedWeekStart((prev) => (prev === startStr ? null : startStr));
   };
-  // 期間フィルタリング
+
   const getFilteredRecords = () => {
-    if (selectedWeekOffset !== null) {
-      const { start, end } = getWeekRange(selectedWeekOffset);
-      const startStr = start.toISOString().split("T")[0];
+    if (selectedWeekStart !== null) {
+      const start = new Date(selectedWeekStart);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
       const endStr = end.toISOString().split("T")[0];
       return records.filter(
-        (r) => r.study_date >= startStr && r.study_date <= endStr,
+        (r) => r.study_date >= selectedWeekStart && r.study_date <= endStr,
       );
     }
     const now = new Date();
@@ -217,14 +270,17 @@ export default function DashboardPage() {
 
   const recentRecords = filteredRecords.slice(0, 5);
 
-  const selectedWeek =
-    selectedWeekOffset !== null ? getWeekRange(selectedWeekOffset) : null;
-  const sectionLabel = selectedWeek
-    ? `${formatDate(selectedWeek.start)}〜${formatDate(selectedWeek.end)}`
-    : periodLabels[period];
+  const selectedWeekLabel =
+    selectedWeekStart !== null
+      ? (() => {
+          const start = new Date(selectedWeekStart);
+          const end = new Date(start);
+          end.setDate(end.getDate() + 6);
+          return `${formatDate(start, true)}〜${formatDate(end, true)}`;
+        })()
+      : null;
 
-  const periodStart = getWeekRange(weekPageOffset - 3).label.split("〜")[0];
-  const periodEnd = getWeekRange(weekPageOffset).label.split("〜")[1];
+  const sectionLabel = selectedWeekLabel ?? periodLabels[period];
 
   if (loading) {
     return (
@@ -268,11 +324,11 @@ export default function DashboardPage() {
               key={p}
               onClick={() => {
                 setPeriod(p);
-                setSelectedWeekOffset(null);
+                setSelectedWeekStart(null);
               }}
               className={clsx(
                 "flex-1 text-xs py-1.5 rounded-lg transition-colors font-medium",
-                period === p && selectedWeekOffset === null
+                period === p && selectedWeekStart === null
                   ? "bg-white text-indigo-600 shadow-sm"
                   : "text-gray-500 hover:text-gray-700",
               )}
@@ -331,100 +387,108 @@ export default function DashboardPage() {
               週別学習時間
             </h2>
             <div className="flex items-center gap-2">
+              {/* 左矢印＝過去へ */}
               <button
                 onClick={() => {
-                  setWeekPageOffset((p) => p + 4);
-                  setSelectedWeekOffset(null);
+                  setWeekPageOffset((p) => p + weekCount);
+                  setSelectedWeekStart(null);
                 }}
                 className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
-                aria-label="前の4週へ"
-              >
-                <ChevronRight size={14} />
-              </button>
-              <span className="text-xs text-gray-400">
-                {periodStart}〜{periodEnd}
-              </span>
-              <button
-                onClick={() => {
-                  setWeekPageOffset((p) => p - 4);
-                  setSelectedWeekOffset(null);
-                }}
-                disabled={weekPageOffset <= 0}
-                className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
-                aria-label="次の4週へ"
+                aria-label="過去へ"
               >
                 <ChevronLeft size={14} />
               </button>
+              <span className="text-xs text-gray-400">{periodNavLabel}</span>
+              {/* 右矢印＝未来へ */}
+              <button
+                onClick={() => {
+                  setWeekPageOffset((p) => p - weekCount);
+                  setSelectedWeekStart(null);
+                }}
+                disabled={weekPageOffset < weekCount}
+                className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
+                aria-label="未来へ"
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
           </div>
-          {selectedWeekOffset !== null && (
-            <p className="text-xs text-indigo-500 mb-2">
-              📅 {sectionLabel} を表示中　
-              <button
-                onClick={() => setSelectedWeekOffset(null)}
-                className="underline"
+          <div onMouseDown={(e) => e.preventDefault()}>
+            <ResponsiveContainer width="100%" height={isMobile ? 190 : 160}>
+              <BarChart
+                data={weeklyData}
+                barSize={isMobile ? 28 : 36}
+                margin={{ bottom: isMobile ? 40 : 0 }}
               >
-                解除
-              </button>
-            </p>
-          )}
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={weeklyData} barSize={32}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#F3F4F6"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v: number) => `${v}h`}
-              />
-              <Tooltip
-                cursor={{ fill: "rgba(99,102,241,0.05)" }}
-                formatter={(value) => [`${Number(value)}h`, "学習時間"]}
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #F3F4F6",
-                  fontSize: "12px",
-                }}
-              />
-              <Bar
-                dataKey="hours"
-                radius={[4, 4, 0, 0]}
-                onClick={handleBarClick}
-                style={{ cursor: "pointer" }}
-              >
-                {weeklyData.map((entry, index) => (
-                  <Cell
-                    key={index}
-                    fill={
-                      entry.isSelected
-                        ? "#4F46E5"
-                        : entry.isCurrentWeek && weekPageOffset === 0
-                          ? "#6366F1"
-                          : "#C7D2FE"
-                    }
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#F3F4F6"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  tick={
+                    isMobile
+                      ? (props) => <MobileXAxisTick {...props} />
+                      : { fontSize: 9, fill: "#9CA3AF" }
+                  }
+                  height={isMobile ? 50 : 30}
+                />
+                <YAxis
+                  width={30}
+                  tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: number) => `${v}h`}
+                />
+                <Tooltip
+                  cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                  formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "1px solid #F3F4F6",
+                    fontSize: "12px",
+                  }}
+                />
+                <Bar
+                  dataKey="hours"
+                  radius={[4, 4, 0, 0]}
+                  onClick={handleBarClick}
+                  activeBar={false}
+                  style={{ cursor: "pointer" }}
+                >
+                  {weeklyData.map((entry, index) => (
+                    <Cell
+                      key={index}
+                      fill={
+                        entry.isSelected
+                          ? "#4F46E5"
+                          : selectedWeekStart === null && entry.weekOffset === 0
+                            ? "#6366F1"
+                            : "#C7D2FE"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* 円グラフ＋記録一覧 */}
         <div className="grid md:grid-cols-2 gap-4 mb-4">
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">
-              カテゴリー別（{sectionLabel}）
-            </h2>
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-gray-700">
+                カテゴリー別
+              </h2>
+              <p className="text-xs text-indigo-500 mt-0.5 font-medium">
+                {sectionLabel}
+              </p>
+            </div>
             {categoryStats.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">
                 まだ記録がありません
@@ -474,9 +538,16 @@ export default function DashboardPage() {
           </div>
 
           <div className="card">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">
-              {sectionLabel}の記録
-            </h2>
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-gray-700">
+                {selectedWeekLabel
+                  ? "週の記録"
+                  : `${periodLabels[period]}の記録`}
+              </h2>
+              <p className="text-xs text-indigo-500 mt-0.5 font-medium">
+                {sectionLabel}
+              </p>
+            </div>
             {recentRecords.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">
                 まだ記録がありません
