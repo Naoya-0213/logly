@@ -452,15 +452,17 @@ export default function DashboardPage() {
                     tickLine={false}
                     width={130}
                   />
-                  <Tooltip
-                    cursor={{ fill: "rgba(99,102,241,0.05)" }}
-                    formatter={(value) => [`${Number(value)}h`, "学習時間"]}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #F3F4F6",
-                      fontSize: "12px",
-                    }}
-                  />
+                  {!isMobile && (
+                    <Tooltip
+                      cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                      formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "1px solid #F3F4F6",
+                        fontSize: "12px",
+                      }}
+                    />
+                  )}
                   <Bar
                     dataKey="hours"
                     radius={[0, 4, 4, 0]}
@@ -509,6 +511,7 @@ export default function DashboardPage() {
                   <Tooltip
                     cursor={{ fill: "rgba(99,102,241,0.05)" }}
                     formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                    labelFormatter={() => ""}
                     contentStyle={{
                       borderRadius: "8px",
                       border: "1px solid #F3F4F6",
