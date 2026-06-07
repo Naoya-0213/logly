@@ -130,6 +130,20 @@ export default function DashboardPage() {
     .filter((c) => c.minutes > 0)
     .sort((a, b) => b.minutes - a.minutes);
 
+  // カテゴリーなしの記録を「その他」として追加
+  const uncategorizedMins = filteredRecords
+    .filter((r) => r.category_id === null)
+    .reduce((sum, r) => sum + r.duration_minutes, 0);
+
+  if (uncategorizedMins > 0) {
+    categoryStats.push({
+      name: "その他",
+      minutes: uncategorizedMins,
+      hours: Math.round((uncategorizedMins / 60) * 10) / 10,
+      color: "#9CA3AF",
+    });
+  }
+
   const recentRecords = filteredRecords.slice(0, 5);
 
   if (loading) {
