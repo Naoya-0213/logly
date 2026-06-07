@@ -3,7 +3,7 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { createClient } from "@/lib/supabase";
 import { StudyRecord } from "@/types";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Clock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -165,19 +165,12 @@ export default function RecordsPage() {
     {} as Record<string, StudyRecord[]>,
   );
 
+  const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const yesterdayDate = new Date(now);
-    yesterdayDate.setDate(now.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split("T")[0];
-
-    if (dateStr === today)
-      return `${date.toLocaleDateString("ja-JP", { month: "long", day: "numeric" })}（今日）`;
-    if (dateStr === yesterday)
-      return `${date.toLocaleDateString("ja-JP", { month: "long", day: "numeric" })}（昨日）`;
-    return date.toLocaleDateString("ja-JP", { month: "long", day: "numeric" });
+    const dayLabel = DAY_LABELS[date.getDay()];
+    return `${date.toLocaleDateString("ja-JP", { month: "long", day: "numeric" })}（${dayLabel}）`;
   };
 
   if (loading) {
@@ -284,6 +277,16 @@ export default function RecordsPage() {
                     {formatDate(date)}
                   </span>
                   <div className="flex-1 h-px bg-gray-100" />
+                  <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
+                    <Clock size={10} className="text-indigo-400" />
+                    {(() => {
+                      const total = (dateRecords as StudyRecord[]).reduce(
+                        (sum, r) => sum + r.duration_minutes,
+                        0,
+                      );
+                      return `${Math.floor(total / 60)}h ${total % 60}m`;
+                    })()}
+                  </span>
                 </div>
 
                 {/* その日の記録 */}
