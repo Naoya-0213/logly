@@ -6,6 +6,15 @@ export const metadata: Metadata = {
   title: "Logly - 学習記録アプリ",
   description: "毎日の学習を記録して、成長を可視化しよう",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Logly - 学習記録アプリ",
+    description: "毎日の学習を記録して、成長を可視化しよう",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-image.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
