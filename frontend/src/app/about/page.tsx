@@ -142,7 +142,7 @@ export default function AboutPage() {
               <span className="text-sm text-gray-500">お問い合わせ</span>
               <span className="flex items-center gap-1 text-sm text-indigo-500 group-hover:text-indigo-600 transition-colors">
                 <Mail size={14} />
-                naoya.work0213@gmail.com
+                logly.track@gmail.com
               </span>
             </a>
           </div>
