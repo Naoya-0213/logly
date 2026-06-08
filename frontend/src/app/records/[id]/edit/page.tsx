@@ -4,7 +4,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { createClient } from "@/lib/supabase";
 import { Category } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -31,6 +31,7 @@ export default function EditRecordPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [registeredAt, setRegisteredAt] = useState<string>("");
   const [hoursInput, setHoursInput] = useState<string>("0");
   const [minutesInput, setMinutesInput] = useState<string>("0");
 
@@ -53,12 +54,17 @@ export default function EditRecordPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
       const { data: record } = await supabase
         .from("study_records")
-        .select("*")
+        .select("*, created_at")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -77,6 +83,15 @@ export default function EditRecordPage() {
       setValue("content", record.content || "");
       setValue("duration_hours", h);
       setValue("duration_minutes", m);
+
+      setValue("duration_minutes", record.duration_minutes % 60);
+      setMinutesInput(String(record.duration_minutes % 60));
+
+      // 登録日時をフォーマット
+      const createdAt = new Date(record.created_at);
+      const formatted = `${createdAt.getFullYear()}/${String(createdAt.getMonth() + 1).padStart(2, "0")}/${String(createdAt.getDate()).padStart(2, "0")}　${String(createdAt.getHours()).padStart(2, "0")}:${String(createdAt.getMinutes()).padStart(2, "0")}`;
+      setRegisteredAt(formatted);
+
       setHoursInput(String(h));
       setMinutesInput(String(m));
 
@@ -143,7 +158,18 @@ export default function EditRecordPage() {
         </div>
 
         <div className="card">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
+            {/* 登録日時 */}
+            {registeredAt && (
+              <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+                <Clock size={12} className="text-gray-400 flex-shrink-0" />
+                <span>登録日時：{registeredAt}</span>
+              </div>
+            )}
+
             <div>
               <label className="label">日付</label>
               <input
@@ -151,9 +177,12 @@ export default function EditRecordPage() {
                 type="date"
                 className="input-field"
                 style={{ WebkitAppearance: "none" }}
+                lang="ja"
               />
               {errors.study_date && (
-                <p className="text-red-500 text-xs mt-1">{errors.study_date.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.study_date.message}
+                </p>
               )}
             </div>
 
@@ -162,7 +191,9 @@ export default function EditRecordPage() {
               <select {...register("category_id")} className="input-field">
                 <option value="">カテゴリーなし</option>
                 {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -176,7 +207,9 @@ export default function EditRecordPage() {
                 className="input-field"
               />
               {errors.content && (
-                <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.content.message}
+                </p>
               )}
             </div>
 
@@ -194,9 +227,15 @@ export default function EditRecordPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => { const val = Math.max(0, hours - 1); setValue("duration_hours", val); setHoursInput(String(val)); }}
+                      onClick={() => {
+                        const val = Math.max(0, hours - 1);
+                        setValue("duration_hours", val);
+                        setHoursInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >−</button>
+                    >
+                      −
+                    </button>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -205,10 +244,16 @@ export default function EditRecordPage() {
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");
                         setHoursInput(raw);
-                        setValue("duration_hours", Math.min(23, Math.max(0, parseInt(raw) || 0)));
+                        setValue(
+                          "duration_hours",
+                          Math.min(23, Math.max(0, parseInt(raw) || 0)),
+                        );
                       }}
                       onBlur={() => {
-                        const val = Math.min(23, Math.max(0, parseInt(hoursInput) || 0));
+                        const val = Math.min(
+                          23,
+                          Math.max(0, parseInt(hoursInput) || 0),
+                        );
                         setValue("duration_hours", val);
                         setHoursInput(String(val));
                       }}
@@ -216,9 +261,15 @@ export default function EditRecordPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => { const val = Math.min(23, hours + 1); setValue("duration_hours", val); setHoursInput(String(val)); }}
+                      onClick={() => {
+                        const val = Math.min(23, hours + 1);
+                        setValue("duration_hours", val);
+                        setHoursInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
@@ -230,9 +281,15 @@ export default function EditRecordPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => { const val = Math.max(0, minutes - 1); setValue("duration_minutes", val); setMinutesInput(String(val)); }}
+                      onClick={() => {
+                        const val = Math.max(0, minutes - 1);
+                        setValue("duration_minutes", val);
+                        setMinutesInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >−</button>
+                    >
+                      −
+                    </button>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -241,10 +298,16 @@ export default function EditRecordPage() {
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");
                         setMinutesInput(raw);
-                        setValue("duration_minutes", Math.min(59, Math.max(0, parseInt(raw) || 0)));
+                        setValue(
+                          "duration_minutes",
+                          Math.min(59, Math.max(0, parseInt(raw) || 0)),
+                        );
                       }}
                       onBlur={() => {
-                        const val = Math.min(59, Math.max(0, parseInt(minutesInput) || 0));
+                        const val = Math.min(
+                          59,
+                          Math.max(0, parseInt(minutesInput) || 0),
+                        );
                         setValue("duration_minutes", val);
                         setMinutesInput(String(val));
                       }}
@@ -252,9 +315,15 @@ export default function EditRecordPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => { const val = Math.min(59, minutes + 1); setValue("duration_minutes", val); setMinutesInput(String(val)); }}
+                      onClick={() => {
+                        const val = Math.min(59, minutes + 1);
+                        setValue("duration_minutes", val);
+                        setMinutesInput(String(val));
+                      }}
                       className="w-7 h-7 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
@@ -274,10 +343,17 @@ export default function EditRecordPage() {
             </div>
 
             <div className="flex gap-3 mt-2">
-              <Link href="/records" className="flex-1 btn-secondary text-center">
+              <Link
+                href="/records"
+                className="flex-1 btn-secondary text-center"
+              >
                 キャンセル
               </Link>
-              <button type="submit" disabled={saving} className="flex-1 btn-primary">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 btn-primary"
+              >
                 {saving ? "保存中..." : "更新する"}
               </button>
             </div>

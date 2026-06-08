@@ -33,7 +33,8 @@ export default function RecordsPage() {
       .from("study_records")
       .select("*, categories(*)")
       .eq("user_id", user.id)
-      .order("study_date", { ascending: false });
+      .order("study_date", { ascending: false })
+      .order("created_at", { ascending: false });
 
     const { data: categoriesData } = await supabase
       .from("categories")
@@ -59,7 +60,8 @@ export default function RecordsPage() {
         .from("study_records")
         .select("*, categories(*)")
         .eq("user_id", user.id)
-        .order("study_date", { ascending: false });
+        .order("study_date", { ascending: false })
+        .order("created_at", { ascending: false });
 
       const { data: categoriesData } = await supabase
         .from("categories")
