@@ -2,6 +2,7 @@
 
 import AppLayout from "@/components/layout/AppLayout";
 import { createClient } from "@/lib/supabase";
+import { getTodayJST } from "@/lib/utils";
 import { Category } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft } from "lucide-react";
@@ -39,7 +40,7 @@ export default function NewRecordPage() {
   const [hoursInput, setHoursInput] = useState<string>("0");
   const [minutesInput, setMinutesInput] = useState<string>("30");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayJST();
 
   const {
     register,

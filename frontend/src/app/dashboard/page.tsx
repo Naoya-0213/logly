@@ -2,6 +2,7 @@
 
 import AppLayout from "@/components/layout/AppLayout";
 import { createClient } from "@/lib/supabase";
+import { getNowJST, getTodayJST } from "@/lib/utils";
 import { Category, StudyRecord, WeekData } from "@/types";
 import clsx from "clsx";
 import {
@@ -61,7 +62,7 @@ function getMonthWeeks(monthOffset: number): {
   label: string;
   startDate: Date;
 }[] {
-  const now = new Date();
+  const now = getNowJST();
   const year = now.getFullYear();
   const month = now.getMonth() + monthOffset;
   const targetDate = new Date(year, month, 1);
@@ -232,7 +233,7 @@ export default function DashboardPage() {
   const totalHours = Math.floor(totalMinutes / 60);
   const totalMins = totalMinutes % 60;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayJST();
   const todayMinutes = records
     .filter((r) => r.study_date === today)
     .reduce((sum, r) => sum + r.duration_minutes, 0);
