@@ -15,12 +15,12 @@ import {
   Search,
   Trash2,
   TrendingUp,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import ModalContent from "./ModalContent";
 
 const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -38,13 +38,10 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // カレンダーの表示月
   const today = getTodayJST();
   const todayDate = new Date(today);
   const [calYear, setCalYear] = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
-
-  // リスト用検索・絞り込み
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
@@ -57,7 +54,6 @@ export default function CalendarPage() {
         router.push("/login");
         return;
       }
-
       const [recordsRes, categoriesRes] = await Promise.all([
         supabase
           .from("study_records")
@@ -67,7 +63,6 @@ export default function CalendarPage() {
           .order("created_at", { ascending: false }),
         supabase.from("categories").select("*").eq("user_id", user.id),
       ]);
-
       setRecords(recordsRes.data || []);
       setCategories(categoriesRes.data || []);
       setLoading(false);
@@ -93,9 +88,7 @@ export default function CalendarPage() {
                 if (!error) {
                   setRecords((prev) => prev.filter((r) => r.id !== id));
                   toast.success("記録を削除しました");
-                } else {
-                  toast.error("削除に失敗しました");
-                }
+                } else toast.error("削除に失敗しました");
               }}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-3 rounded-lg transition-colors"
             >
@@ -124,12 +117,10 @@ export default function CalendarPage() {
     );
   };
 
-  // カレンダー用データ
+  // カレンダー計算
   const firstDay = new Date(calYear, calMonth, 1);
   const lastDay = new Date(calYear, calMonth + 1, 0);
   const firstWeekDay = firstDay.getDay();
-
-  // その月の記録をdateでまとめる
   const recordsByDate = records.reduce(
     (acc, r) => {
       if (!acc[r.study_date]) acc[r.study_date] = [];
@@ -139,7 +130,6 @@ export default function CalendarPage() {
     {} as Record<string, StudyRecord[]>,
   );
 
-  // 今月の合計
   const monthFirstStr = firstDay.toISOString().split("T")[0];
   const monthLastStr = lastDay.toISOString().split("T")[0];
   const monthRecords = records.filter(
@@ -150,7 +140,6 @@ export default function CalendarPage() {
     0,
   );
 
-  // カレンダーの日付セルを生成
   const calDays: (number | null)[] = [];
   for (let i = 0; i < firstWeekDay; i++) calDays.push(null);
   for (let d = 1; d <= lastDay.getDate(); d++) calDays.push(d);
@@ -165,7 +154,6 @@ export default function CalendarPage() {
     } else setCalMonth((m) => m - 1);
     setSelectedDate(null);
   };
-
   const nextMonth = () => {
     if (isCurrentMonth) return;
     if (calMonth === 11) {
@@ -175,14 +163,13 @@ export default function CalendarPage() {
     setSelectedDate(null);
   };
 
-  // 選択日の記録
   const selectedRecords = selectedDate ? recordsByDate[selectedDate] || [] : [];
   const selectedTotal = selectedRecords.reduce(
     (sum, r) => sum + r.duration_minutes,
     0,
   );
 
-  // リスト用絞り込み
+  // リスト計算
   const filteredRecords = records.filter((r) => {
     const matchSearch =
       searchQuery === "" ||
@@ -191,7 +178,6 @@ export default function CalendarPage() {
       selectedCategory === "" || r.category_id === Number(selectedCategory);
     return matchSearch && matchCat;
   });
-
   const groupedRecords = filteredRecords.reduce(
     (groups, record) => {
       const date = record.study_date;
@@ -201,7 +187,6 @@ export default function CalendarPage() {
     },
     {} as Record<string, StudyRecord[]>,
   );
-
   const filteredTotalMins = filteredRecords.reduce(
     (sum, r) => sum + r.duration_minutes,
     0,
@@ -242,7 +227,7 @@ export default function CalendarPage() {
           </Link>
         </div>
 
-        {/* タブ切り替え */}
+        {/* タブ */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
           <button
             onClick={() => setViewMode("calendar")}
@@ -270,7 +255,7 @@ export default function CalendarPage() {
 
         {viewMode === "calendar" ? (
           <>
-            {/* 月サマリー */}
+            {/* サマリー */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="card">
                 <div className="flex items-center gap-2 mb-2">
@@ -298,12 +283,10 @@ export default function CalendarPage() {
 
             {/* カレンダー */}
             <div className="card">
-              {/* 月ナビ */}
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={prevMonth}
                   className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
-                  aria-label="前月"
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -314,13 +297,10 @@ export default function CalendarPage() {
                   onClick={nextMonth}
                   disabled={isCurrentMonth}
                   className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
-                  aria-label="次月"
                 >
                   <ChevronRight size={14} />
                 </button>
               </div>
-
-              {/* 曜日ラベル */}
               <div className="grid grid-cols-7 gap-1 mb-1">
                 {DAY_LABELS.map((d, i) => (
                   <div
@@ -338,8 +318,6 @@ export default function CalendarPage() {
                   </div>
                 ))}
               </div>
-
-              {/* 日付グリッド */}
               <div className="grid grid-cols-7 gap-1">
                 {calDays.map((day, idx) => {
                   if (day === null) return <div key={`empty-${idx}`} />;
@@ -348,22 +326,21 @@ export default function CalendarPage() {
                   const isToday = dateStr === today;
                   const isSelected = dateStr === selectedDate;
                   const dayOfWeek = (firstWeekDay + day - 1) % 7;
-
                   return (
                     <button
                       key={day}
                       onClick={() =>
                         setSelectedDate(isSelected ? null : dateStr)
                       }
-                      className="flex flex-col items-center justify-center aspect-square"
+                      className="flex flex-col items-center justify-center aspect-square focus:outline-none"
                     >
                       <div
                         className={clsx(
                           "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
-                          hasRecord && !isToday
-                            ? "bg-indigo-500 text-white"
-                            : isToday
-                              ? "bg-indigo-700 text-white ring-2 ring-indigo-400 ring-offset-1"
+                          isToday
+                            ? "bg-indigo-700 text-white ring-2 ring-indigo-400 ring-offset-1"
+                            : hasRecord
+                              ? "bg-indigo-500 text-white"
                               : isSelected
                                 ? "bg-indigo-50 text-indigo-600"
                                 : dayOfWeek === 0
@@ -381,101 +358,44 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            {/* 選択日モーダル */}
+            {/* モーダル：モバイル（下から）/ PC（中央） */}
             {selectedDate && (
               <div
-                className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center md:justify-center"
+                className="fixed inset-0 bg-black/40 z-50"
                 onClick={() => setSelectedDate(null)}
               >
+                {/* モバイル */}
                 <div
-                  className="bg-white w-full md:w-[480px] md:rounded-2xl rounded-t-2xl p-5 max-h-[60vh] overflow-y-auto pb-16 md:pb-5"
-                  style={{ maxHeight: "calc(70vh - 64px)" }}
+                  className="md:hidden absolute bottom-16 left-0 right-0 bg-white rounded-t-2xl p-5 overflow-y-auto max-h-[60vh]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setSelectedDate(null)}
-                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50"
-                      >
-                        <X size={14} />
-                      </button>
-                      <h2 className="text-sm font-semibold text-gray-700">
-                        {formatDateLabel(selectedDate)}の記録
-                      </h2>
-                    </div>
-                    <Link
-                      href={`/records/new?date=${selectedDate}`}
-                      className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-600"
-                    >
-                      <Plus size={12} />
-                      追加
-                    </Link>
-                  </div>
-
-                  {selectedRecords.length === 0 ? (
-                    <p className="text-gray-400 text-sm text-center pt-8 pb-12">
-                      この日の記録はありません
-                    </p>
-                  ) : (
-                    <>
-                      <div className="flex flex-col gap-1 mb-4">
-                        {selectedRecords.map((record) => (
-                          <div
-                            key={record.id}
-                            className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0"
-                          >
-                            <div
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{
-                                backgroundColor:
-                                  record.categories?.color || "#9CA3AF",
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-700 truncate">
-                                {record.content || "（メモなし）"}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {record.categories?.name || "カテゴリーなし"}
-                              </p>
-                            </div>
-                            <span className="text-sm text-gray-500 flex-shrink-0">
-                              {record.duration_minutes}分
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <Link
-                                href={`/records/${record.id}/edit`}
-                                className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
-                              >
-                                <Pencil size={13} />
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(record.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-end pt-2 border-t border-gray-100 pb-2">
-                        <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
-                          <Clock size={11} />
-                          合計 {Math.floor(selectedTotal / 60)}h{" "}
-                          {selectedTotal % 60}m
-                        </span>
-                      </div>
-                    </>
-                  )}
+                  <ModalContent
+                    selectedDate={selectedDate}
+                    selectedRecords={selectedRecords}
+                    selectedTotal={selectedTotal}
+                    onClose={() => setSelectedDate(null)}
+                    onDelete={handleDelete}
+                  />
+                </div>
+                {/* PC */}
+                <div
+                  className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-5 w-[480px] max-h-[70vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ModalContent
+                    selectedDate={selectedDate}
+                    selectedRecords={selectedRecords}
+                    selectedTotal={selectedTotal}
+                    onClose={() => setSelectedDate(null)}
+                    onDelete={handleDelete}
+                  />
                 </div>
               </div>
             )}
           </>
         ) : (
           <>
-            {/* 累計合計時間 */}
+            {/* 累計 */}
             <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4 flex justify-between items-center">
               <span className="text-sm text-indigo-500 font-medium">
                 累計合計時間
@@ -490,7 +410,7 @@ export default function CalendarPage() {
               </span>
             </div>
 
-            {/* 検索・絞り込み */}
+            {/* 検索 */}
             <div className="flex gap-2 mb-4 w-full min-w-0">
               <div className="flex-1 relative min-w-0">
                 <Search
@@ -519,7 +439,6 @@ export default function CalendarPage() {
               </select>
             </div>
 
-            {/* 絞り込み合計バー */}
             {isFiltered && (
               <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-2 mb-4">
                 <span className="text-xs text-indigo-500">
