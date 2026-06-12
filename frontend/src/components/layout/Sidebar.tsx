@@ -17,7 +17,7 @@ import NotificationBell from "./NotificationBell";
 const navItems = [
   { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboard },
   { href: "/records/new", label: "記録を追加", icon: Clock },
-  { href: "/records", label: "履歴一覧", icon: CalendarDays },
+  { href: "/calendar", label: "カレンダー", icon: CalendarDays },
   { href: "/todos", label: "TODO", icon: CheckSquare },
   { href: "/categories", label: "カテゴリー", icon: Tag },
   { href: "/friends", label: "フレンド", icon: Users },

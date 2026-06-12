@@ -9,10 +9,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Flame,
   Pencil,
   Plus,
   Search,
   Trash2,
+  TrendingUp,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -271,7 +273,10 @@ export default function CalendarPage() {
             {/* 月サマリー */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="card">
-                <p className="text-xs text-gray-400 mb-1">今月の合計</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={14} className="text-indigo-400" />
+                  <span className="text-xs text-gray-400">合計</span>
+                </div>
                 <p className="text-xl font-semibold text-gray-800">
                   {Math.floor(monthTotalMins / 60)}
                   <span className="text-sm font-normal text-gray-400"> h </span>
@@ -280,7 +285,10 @@ export default function CalendarPage() {
                 </p>
               </div>
               <div className="card">
-                <p className="text-xs text-gray-400 mb-1">今月の記録数</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame size={14} className="text-orange-400" />
+                  <span className="text-xs text-gray-400">記録数</span>
+                </div>
                 <p className="text-xl font-semibold text-gray-800">
                   {monthRecords.length}
                   <span className="text-sm font-normal text-gray-400"> 件</span>
