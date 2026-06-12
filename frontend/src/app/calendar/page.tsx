@@ -274,9 +274,9 @@ export default function CalendarPage() {
                 <p className="text-xs text-gray-400 mb-1">今月の合計</p>
                 <p className="text-xl font-semibold text-gray-800">
                   {Math.floor(monthTotalMins / 60)}
-                  <span className="text-sm font-normal text-gray-400">h </span>
+                  <span className="text-sm font-normal text-gray-400"> h </span>
                   {monthTotalMins % 60}
-                  <span className="text-sm font-normal text-gray-400">m</span>
+                  <span className="text-sm font-normal text-gray-400"> m</span>
                 </p>
               </div>
               <div className="card">
@@ -406,7 +406,7 @@ export default function CalendarPage() {
                   </div>
 
                   {selectedRecords.length === 0 ? (
-                    <p className="text-gray-400 text-sm text-center py-8">
+                    <p className="text-gray-400 text-sm text-center pt-8 pb-12">
                       この日の記録はありません
                     </p>
                   ) : (
