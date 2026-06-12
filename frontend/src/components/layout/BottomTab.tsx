@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 const tabItems = [
   { href: "/dashboard", label: "ホーム", icon: LayoutDashboard },
   { href: "/records/new", label: "記録", icon: Clock },
-  { href: "/records", label: "履歴", icon: CalendarDays },
+  { href: "/calendar", label: "カレンダー", icon: CalendarDays },
   { href: "/friends", label: "フレンド", icon: Users },
   { href: "/settings", label: "設定", icon: Settings },
 ];
