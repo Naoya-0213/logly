@@ -102,6 +102,24 @@ function getCurrentWeekStartStr(): string {
   return getWeekStart(new Date()).toISOString().split("T")[0];
 }
 
+function calcStreak(records: StudyRecord[]): number {
+  if (records.length === 0) return 0;
+  const dates = new Set(records.map((r) => r.study_date));
+  const today = getTodayJST();
+  let streak = 0;
+  const current = new Date(today);
+  while (true) {
+    const dateStr = current.toISOString().split("T")[0];
+    if (dates.has(dateStr)) {
+      streak++;
+      current.setDate(current.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -238,6 +256,8 @@ export default function DashboardPage() {
     .filter((r) => r.study_date === today)
     .reduce((sum, r) => sum + r.duration_minutes, 0);
 
+  const streak = calcStreak(records);
+
   const categoryStats = categories
     .map((cat) => {
       const mins = filteredRecords
@@ -336,7 +356,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 統計カード */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="card">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={14} className="text-indigo-400" />
@@ -348,7 +368,7 @@ export default function DashboardPage() {
               {totalHours}
               <span className="text-sm font-normal text-gray-400"> h </span>
               {totalMins}
-              <span className="text-sm font-normal text-gray-400"> m </span>
+              <span className="text-sm font-normal text-gray-400"> m</span>
             </div>
           </div>
           <div className="card">
@@ -360,10 +380,10 @@ export default function DashboardPage() {
               {Math.floor(todayMinutes / 60)}
               <span className="text-sm font-normal text-gray-400"> h </span>
               {todayMinutes % 60}
-              <span className="text-sm font-normal text-gray-400"> m </span>
+              <span className="text-sm font-normal text-gray-400"> m</span>
             </div>
           </div>
-          <div className="card col-span-2 md:col-span-1">
+          <div className="card">
             <div className="flex items-center gap-2 mb-2">
               <Flame size={14} className="text-orange-400" />
               <span className="text-xs text-gray-400">
@@ -373,6 +393,16 @@ export default function DashboardPage() {
             <div className="text-2xl font-semibold text-gray-800">
               {filteredRecords.length}
               <span className="text-sm font-normal text-gray-400"> 件</span>
+            </div>
+          </div>
+          <div className="card">
+            <div className="flex items-center gap-2 mb-2">
+              <Flame size={14} className="text-orange-400" />
+              <span className="text-xs text-gray-400">連続記録</span>
+            </div>
+            <div className="text-2xl font-semibold text-orange-500">
+              {streak}
+              <span className="text-sm font-normal text-gray-400"> 日</span>
             </div>
           </div>
         </div>
