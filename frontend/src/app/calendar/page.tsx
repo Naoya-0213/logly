@@ -380,7 +380,8 @@ export default function CalendarPage() {
                 onClick={() => setSelectedDate(null)}
               >
                 <div
-                  className="bg-white w-full md:w-[480px] md:rounded-2xl rounded-t-2xl p-5 max-h-[70vh] overflow-y-auto mb-20 md:mb-0"
+                  className="bg-white w-full md:w-[480px] md:rounded-2xl rounded-t-2xl p-5 max-h-[60vh] overflow-y-auto pb-16 md:pb-5"
+                  style={{ maxHeight: "calc(70vh - 64px)" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between mb-4">
@@ -451,7 +452,7 @@ export default function CalendarPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-end pt-2 border-t border-gray-100">
+                      <div className="flex justify-end pt-2 border-t border-gray-100 pb-2">
                         <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
                           <Clock size={11} />
                           合計 {Math.floor(selectedTotal / 60)}h{" "}
