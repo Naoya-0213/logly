@@ -380,6 +380,7 @@ export default function CalendarPage() {
                 {/* PC */}
                 <div
                   className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-5 w-[480px] max-h-[70vh] overflow-y-auto"
+                  style={{ left: "calc(50% + 120px)" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ModalContent
