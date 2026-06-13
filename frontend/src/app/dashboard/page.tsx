@@ -132,6 +132,8 @@ export default function DashboardPage() {
     null,
   );
   const [isMobile, setIsMobile] = useState(false);
+  const [graphTab, setGraphTab] = useState<"weekly" | "monthly">("weekly");
+  const [yearOffset, setYearOffset] = useState(0); // 0=今年, -1=去年
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -179,6 +181,7 @@ export default function DashboardPage() {
   const monthWeeks = getMonthWeeks(monthOffset);
   const currentWeekStartStr = getCurrentWeekStartStr();
 
+  // 週別データ
   const weeklyData: WeekData[] = monthWeeks.map((week) => {
     const mins = records
       .filter(
@@ -194,6 +197,33 @@ export default function DashboardPage() {
       isCurrentWeek: week.startStr === currentWeekStartStr,
     };
   });
+
+  // 月別データ
+  const displayYear = now.getFullYear() + yearOffset;
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const monthStart = `${displayYear}-${String(i + 1).padStart(2, "0")}-01`;
+    const monthEnd = new Date(displayYear, i + 1, 0)
+      .toISOString()
+      .split("T")[0];
+    const isFuture =
+      new Date(displayYear, i) > new Date(now.getFullYear(), now.getMonth());
+    const isCurrentMonth =
+      displayYear === now.getFullYear() && i === now.getMonth();
+    const mins = isFuture
+      ? 0
+      : records
+          .filter((r) => r.study_date >= monthStart && r.study_date <= monthEnd)
+          .reduce((sum, r) => sum + r.duration_minutes, 0);
+    return {
+      label: `${i + 1}月`,
+      hours: Math.round((mins / 60) * 10) / 10,
+      isFuture,
+      isCurrentMonth,
+    };
+  });
+
+  const yearLabel = `${displayYear}年`;
+  const isCurrentYear = displayYear === now.getFullYear();
 
   const handleBarClick = (data: BarRectangleItem) => {
     const payload = data.payload as WeekData | undefined;
@@ -407,60 +437,231 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 週次グラフ */}
+        {/* 学習時間グラフ */}
         <div className="card mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-700">
-              週別学習時間
-            </h2>
-            <div className="flex items-center gap-2">
-              {monthOffset < 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700">学習時間</h2>
+              {/* 週別 | 月別タブ */}
+              <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg mt-2 w-fit">
+                <button
+                  onClick={() => setGraphTab("weekly")}
+                  className={clsx(
+                    "text-xs px-2.5 py-1 rounded-md transition-colors font-medium",
+                    graphTab === "weekly"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500",
+                  )}
+                >
+                  週別
+                </button>
+                <button
+                  onClick={() => setGraphTab("monthly")}
+                  className={clsx(
+                    "text-xs px-2.5 py-1 rounded-md transition-colors font-medium",
+                    graphTab === "monthly"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500",
+                  )}
+                >
+                  月別
+                </button>
+              </div>
+            </div>
+
+            {/* ナビゲーション */}
+            {graphTab === "weekly" ? (
+              <div className="flex items-center gap-2">
+                {monthOffset < 0 && (
+                  <button
+                    onClick={() => {
+                      setMonthOffset(0);
+                      setSelectedWeekStart(null);
+                    }}
+                    className="text-xs font-medium text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    今月
+                  </button>
+                )}
                 <button
                   onClick={() => {
-                    setMonthOffset(0);
+                    setMonthOffset((p) => p - 1);
                     setSelectedWeekStart(null);
                   }}
-                  className="text-xs font-medium text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                  className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
+                  aria-label="過去へ"
                 >
-                  今月
+                  <ChevronLeft size={14} />
                 </button>
-              )}
-              <button
-                onClick={() => {
-                  setMonthOffset((p) => p - 1);
-                  setSelectedWeekStart(null);
-                }}
-                className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
-                aria-label="過去へ"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <span className="text-xs text-gray-600 font-medium">
-                {monthLabel}
-              </span>
-              <button
-                onClick={() => {
-                  setMonthOffset((p) => p + 1);
-                  setSelectedWeekStart(null);
-                }}
-                disabled={monthOffset >= 0}
-                className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
-                aria-label="未来へ"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
+                <span className="text-xs text-gray-600 font-medium">
+                  {monthLabel}
+                </span>
+                <button
+                  onClick={() => {
+                    setMonthOffset((p) => p + 1);
+                    setSelectedWeekStart(null);
+                  }}
+                  disabled={monthOffset >= 0}
+                  className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
+                  aria-label="未来へ"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {yearOffset < 0 && (
+                  <button
+                    onClick={() => setYearOffset(0)}
+                    className="text-xs font-medium text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    今年
+                  </button>
+                )}
+                <button
+                  onClick={() => setYearOffset((p) => p - 1)}
+                  className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400"
+                  aria-label="前年"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="text-xs text-gray-600 font-medium">
+                  {yearLabel}
+                </span>
+                <button
+                  onClick={() => setYearOffset((p) => p + 1)}
+                  disabled={isCurrentYear}
+                  className="p-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 disabled:opacity-30"
+                  aria-label="次年"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
+
           <div onMouseDown={(e) => e.preventDefault()}>
-            {isMobile ? (
+            {graphTab === "weekly" ? (
+              // 週別グラフ（既存のまま）
+              isMobile ? (
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(weeklyData.length * 44, 160)}
+                >
+                  <BarChart
+                    data={weeklyData}
+                    layout="vertical"
+                    barSize={20}
+                    margin={{ top: 0, right: 8, bottom: 0, left: -20 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#F3F4F6"
+                      horizontal={false}
+                    />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: number) => `${v}h`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      tick={{ fontSize: 9, fill: "#9CA3AF", textAnchor: "end" }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={110}
+                    />
+                    <Bar
+                      dataKey="hours"
+                      radius={[0, 4, 4, 0]}
+                      onClick={handleBarClick}
+                      activeBar={false}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {weeklyData.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={
+                            entry.isSelected
+                              ? "#4F46E5"
+                              : entry.isCurrentWeek && monthOffset === 0
+                                ? "#6366F1"
+                                : "#C7D2FE"
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={weeklyData} barSize={32}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#F3F4F6"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      interval={0}
+                      tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                      height={30}
+                    />
+                    <YAxis
+                      width={30}
+                      tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: number) => `${v}h`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                      formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                      labelFormatter={() => ""}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "1px solid #F3F4F6",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar
+                      dataKey="hours"
+                      radius={[4, 4, 0, 0]}
+                      onClick={handleBarClick}
+                      activeBar={false}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {weeklyData.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={
+                            entry.isSelected
+                              ? "#4F46E5"
+                              : entry.isCurrentWeek && monthOffset === 0
+                                ? "#6366F1"
+                                : "#C7D2FE"
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )
+            ) : // 月別グラフ
+            isMobile ? (
               <ResponsiveContainer
                 width="100%"
-                height={Math.max(weeklyData.length * 44, 160)}
+                height={Math.max(monthlyData.length * 36, 200)}
               >
                 <BarChart
-                  data={weeklyData}
+                  data={monthlyData}
                   layout="vertical"
-                  barSize={20}
+                  barSize={18}
                   margin={{ top: 0, right: 8, bottom: 0, left: -20 }}
                 >
                   <CartesianGrid
@@ -478,36 +679,32 @@ export default function DashboardPage() {
                   <YAxis
                     type="category"
                     dataKey="label"
-                    tick={{ fontSize: 9, fill: "#9CA3AF", textAnchor: "end" }}
+                    tick={{ fontSize: 10, fill: "#9CA3AF", textAnchor: "end" }}
                     axisLine={false}
                     tickLine={false}
-                    width={110}
+                    width={60}
                   />
-                  {!isMobile && (
-                    <Tooltip
-                      cursor={{ fill: "rgba(99,102,241,0.05)" }}
-                      formatter={(value) => [`${Number(value)}h`, "学習時間"]}
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #F3F4F6",
-                        fontSize: "12px",
-                      }}
-                    />
-                  )}
-                  <Bar
-                    dataKey="hours"
-                    radius={[0, 4, 4, 0]}
-                    onClick={handleBarClick}
-                    activeBar={false}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {weeklyData.map((entry, index) => (
+                  <Tooltip
+                    cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                    formatter={(value) => [
+                      Number(value) > 0 ? `${Number(value)}h` : "記録なし",
+                      "学習時間",
+                    ]}
+                    labelFormatter={() => ""}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid #F3F4F6",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar dataKey="hours" radius={[0, 4, 4, 0]} activeBar={false}>
+                    {monthlyData.map((entry, index) => (
                       <Cell
                         key={index}
                         fill={
-                          entry.isSelected
-                            ? "#4F46E5"
-                            : entry.isCurrentWeek && monthOffset === 0
+                          entry.isFuture
+                            ? "#E5E7EB"
+                            : entry.isCurrentMonth
                               ? "#6366F1"
                               : "#C7D2FE"
                         }
@@ -518,7 +715,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             ) : (
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={weeklyData} barSize={32}>
+                <BarChart data={monthlyData} barSize={20}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="#F3F4F6"
@@ -529,8 +726,8 @@ export default function DashboardPage() {
                     axisLine={false}
                     tickLine={false}
                     interval={0}
-                    tick={{ fontSize: 9, fill: "#9CA3AF" }}
-                    height={30}
+                    tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                    height={24}
                   />
                   <YAxis
                     width={30}
@@ -541,7 +738,10 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(99,102,241,0.05)" }}
-                    formatter={(value) => [`${Number(value)}h`, "学習時間"]}
+                    formatter={(value) => [
+                      Number(value) > 0 ? `${Number(value)}h` : "記録なし",
+                      "学習時間",
+                    ]}
                     labelFormatter={() => ""}
                     contentStyle={{
                       borderRadius: "8px",
@@ -549,20 +749,14 @@ export default function DashboardPage() {
                       fontSize: "12px",
                     }}
                   />
-                  <Bar
-                    dataKey="hours"
-                    radius={[4, 4, 0, 0]}
-                    onClick={handleBarClick}
-                    activeBar={false}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {weeklyData.map((entry, index) => (
+                  <Bar dataKey="hours" radius={[4, 4, 0, 0]} activeBar={false}>
+                    {monthlyData.map((entry, index) => (
                       <Cell
                         key={index}
                         fill={
-                          entry.isSelected
-                            ? "#4F46E5"
-                            : entry.isCurrentWeek && monthOffset === 0
+                          entry.isFuture
+                            ? "#E5E7EB"
+                            : entry.isCurrentMonth
                               ? "#6366F1"
                               : "#C7D2FE"
                         }
