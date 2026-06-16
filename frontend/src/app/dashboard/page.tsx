@@ -134,6 +134,7 @@ export default function DashboardPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [graphTab, setGraphTab] = useState<"weekly" | "monthly">("weekly");
   const [yearOffset, setYearOffset] = useState(0); // 0=今年, -1=去年
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // 0-11
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -235,7 +236,27 @@ export default function DashboardPage() {
     setSelectedWeekStart((prev) => (prev === startStr ? null : startStr));
   };
 
+  const handleMonthBarClick = (data: BarRectangleItem) => {
+    const payload = data.payload as
+      | { label: string; isFuture: boolean }
+      | undefined;
+    if (!payload || payload.isFuture) return;
+    const monthIdx = monthlyData.findIndex((m) => m.label === payload.label);
+    if (monthIdx === -1) return;
+    setSelectedMonth((prev) => (prev === monthIdx ? null : monthIdx));
+    setSelectedWeekStart(null);
+  };
+
   const getFilteredRecords = () => {
+    if (selectedMonth !== null) {
+      const monthStart = `${displayYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`;
+      const monthEnd = new Date(displayYear, selectedMonth + 1, 0)
+        .toISOString()
+        .split("T")[0];
+      return records.filter(
+        (r) => r.study_date >= monthStart && r.study_date <= monthEnd,
+      );
+    }
     if (selectedWeekStart !== null) {
       const start = new Date(selectedWeekStart);
       const end = new Date(start);
@@ -327,7 +348,11 @@ export default function DashboardPage() {
         })()
       : null;
 
-  const sectionLabel = selectedWeekLabel ?? periodLabels[period];
+  const selectedMonthLabel =
+    selectedMonth !== null ? `${displayYear}年${selectedMonth + 1}月` : null;
+
+  const sectionLabel =
+    selectedWeekLabel ?? selectedMonthLabel ?? periodLabels[period];
 
   if (loading) {
     return (
@@ -445,7 +470,10 @@ export default function DashboardPage() {
               {/* 週別 | 月別タブ */}
               <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg mt-2 w-fit">
                 <button
-                  onClick={() => setGraphTab("weekly")}
+                  onClick={() => {
+                    setGraphTab("weekly");
+                    setSelectedMonth(null);
+                  }}
                   className={clsx(
                     "text-xs px-2.5 py-1 rounded-md transition-colors font-medium",
                     graphTab === "weekly"
@@ -456,7 +484,10 @@ export default function DashboardPage() {
                   週別
                 </button>
                 <button
-                  onClick={() => setGraphTab("monthly")}
+                  onClick={() => {
+                    setGraphTab("monthly");
+                    setSelectedWeekStart(null);
+                  }}
                   className={clsx(
                     "text-xs px-2.5 py-1 rounded-md transition-colors font-medium",
                     graphTab === "monthly"
@@ -697,16 +728,24 @@ export default function DashboardPage() {
                       fontSize: "12px",
                     }}
                   />
-                  <Bar dataKey="hours" radius={[0, 4, 4, 0]} activeBar={false}>
+                  <Bar
+                    dataKey="hours"
+                    radius={[0, 4, 4, 0]}
+                    activeBar={false}
+                    onClick={handleMonthBarClick}
+                    style={{ cursor: "pointer" }}
+                  >
                     {monthlyData.map((entry, index) => (
                       <Cell
                         key={index}
                         fill={
                           entry.isFuture
                             ? "#E5E7EB"
-                            : entry.isCurrentMonth
-                              ? "#6366F1"
-                              : "#C7D2FE"
+                            : selectedMonth === index
+                              ? "#4F46E5"
+                              : entry.isCurrentMonth
+                                ? "#6366F1"
+                                : "#C7D2FE"
                         }
                       />
                     ))}
@@ -749,16 +788,24 @@ export default function DashboardPage() {
                       fontSize: "12px",
                     }}
                   />
-                  <Bar dataKey="hours" radius={[4, 4, 0, 0]} activeBar={false}>
+                  <Bar
+                    dataKey="hours"
+                    radius={[4, 4, 0, 0]}
+                    activeBar={false}
+                    onClick={handleMonthBarClick}
+                    style={{ cursor: "pointer" }}
+                  >
                     {monthlyData.map((entry, index) => (
                       <Cell
                         key={index}
                         fill={
                           entry.isFuture
                             ? "#E5E7EB"
-                            : entry.isCurrentMonth
-                              ? "#6366F1"
-                              : "#C7D2FE"
+                            : selectedMonth === index
+                              ? "#4F46E5"
+                              : entry.isCurrentMonth
+                                ? "#6366F1"
+                                : "#C7D2FE"
                         }
                       />
                     ))}
