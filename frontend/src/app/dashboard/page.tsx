@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  Pencil,
   Plus,
   TrendingUp,
 } from "lucide-react";
@@ -120,6 +121,161 @@ function calcStreak(records: StudyRecord[]): number {
   return streak;
 }
 
+function GoalContent({
+  sectionLabel,
+  editingGoal,
+  setEditingGoal,
+  goalInput,
+  setGoalInput,
+  handleSaveGoal,
+  goalMinutes,
+  goalAchievePct,
+  goalAchievedMinutes,
+  remainMinutes,
+  remainingDays,
+  totalMinutes,
+}: {
+  sectionLabel: string;
+  editingGoal: boolean;
+  setEditingGoal: (v: boolean) => void;
+  goalInput: string;
+  setGoalInput: (v: string) => void;
+  handleSaveGoal: () => void;
+  goalMinutes: number;
+  goalAchievePct: number;
+  goalAchievedMinutes: number;
+  remainMinutes: number;
+  remainingDays: number | null;
+  totalMinutes: number;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between mb-1">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700">目標達成率</h2>
+          <p className="text-xs text-indigo-500 mt-0.5 font-medium">
+            {sectionLabel}　目標：{Math.floor(goalMinutes / 60)}時間
+          </p>
+        </div>
+        {!editingGoal && (
+          <button
+            onClick={() => {
+              setEditingGoal(true);
+              setGoalInput(
+                goalMinutes > 0 ? String(Math.floor(goalMinutes / 60)) : "",
+              );
+            }}
+            className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-600"
+          >
+            <Pencil size={12} />
+            変更
+          </button>
+        )}
+      </div>
+
+      {editingGoal && (
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <span className="text-xs text-gray-400">目標：</span>
+          <input
+            type="number"
+            value={goalInput}
+            onChange={(e) => setGoalInput(e.target.value)}
+            className="w-16 text-center border border-indigo-300 rounded-lg bg-indigo-50 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          />
+          <span className="text-xs text-gray-400">時間</span>
+          <button
+            onClick={handleSaveGoal}
+            className="text-xs bg-indigo-500 text-white px-3 py-1 rounded-lg hover:bg-indigo-600"
+          >
+            保存
+          </button>
+          <button
+            onClick={() => setEditingGoal(false)}
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
+            キャンセル
+          </button>
+        </div>
+      )}
+
+      {goalMinutes === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-400 text-sm mb-3">
+            目標時間が設定されていません
+          </p>
+          <button
+            onClick={() => {
+              setEditingGoal(true);
+              setGoalInput("");
+            }}
+            className="text-xs bg-indigo-500 text-white px-4 py-2 rounded-xl hover:bg-indigo-600"
+          >
+            目標を設定する
+          </button>
+        </div>
+      ) : (
+        <>
+          <div
+            className="relative flex items-center justify-center my-2"
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { value: Math.min(totalMinutes, goalMinutes) },
+                    { value: Math.max(goalMinutes - totalMinutes, 0) },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  startAngle={90}
+                  endAngle={-270}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  <Cell fill="#6366F1" />
+                  <Cell fill="#F3F4F6" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute text-center pointer-events-none">
+              <div className="text-xl font-semibold text-gray-800">
+                {goalAchievePct}%
+              </div>
+              <div className="text-xs text-gray-400 mt-1">達成</div>
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 pt-3 border-t border-gray-100">
+            <div className="text-center">
+              <div className="text-sm font-semibold text-gray-800">
+                {Math.floor(goalAchievedMinutes / 60)}h{" "}
+                {goalAchievedMinutes % 60}m
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">達成済み</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-gray-800">
+                {Math.floor(remainMinutes / 60)}h {remainMinutes % 60}m
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">残り</div>
+            </div>
+            {remainingDays !== null && (
+              <div className="text-center">
+                <div className="text-sm font-semibold text-gray-800">
+                  {remainingDays}日
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">残り日数</div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -135,6 +291,13 @@ export default function DashboardPage() {
   const [graphTab, setGraphTab] = useState<"weekly" | "monthly">("weekly");
   const [yearOffset, setYearOffset] = useState(0); // 0=今年, -1=去年
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // 0-11
+
+  // 目標関連
+  const [chartTab, setChartTab] = useState<"category" | "goal">("category");
+  const [goalMinutes, setGoalMinutes] = useState<number>(0);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -161,6 +324,7 @@ export default function DashboardPage() {
         .from("categories")
         .select("*")
         .eq("user_id", user.id);
+      setUserId(user.id);
       setRecords(recordsData || []);
       setCategories(categoriesData || []);
       setLoading(false);
@@ -168,7 +332,64 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const now = new Date();
+  const now = getNowJST();
+  const displayYear = now.getFullYear() + yearOffset;
+
+  // 期間・月選択が変わったら目標を取得
+  useEffect(() => {
+    const fetchGoal = async () => {
+      if (!userId) return;
+      const now = getNowJST();
+      let year = now.getFullYear();
+      let month = now.getMonth() + 1; // 1-12
+
+      if (selectedMonth !== null) {
+        year = displayYear;
+        month = selectedMonth + 1;
+      } else if (period === "lastMonth") {
+        const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        year = d.getFullYear();
+        month = d.getMonth() + 1;
+      } else if (period === "last3Months") {
+        // 3ヶ月分の目標合計を取得
+        const months = [0, 1, 2].map((i) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          return { year: d.getFullYear(), month: d.getMonth() + 1 };
+        });
+        const results = await Promise.all(
+          months.map(({ year: y, month: m }) =>
+            supabase
+              .from("monthly_goals")
+              .select("goal_minutes")
+              .eq("user_id", userId)
+              .eq("year", y)
+              .eq("month", m)
+              .single(),
+          ),
+        );
+        const total = results.reduce(
+          (sum, { data }) => sum + (data?.goal_minutes || 0),
+          0,
+        );
+        setGoalMinutes(total);
+        return;
+      } else if (period === "all") {
+        setGoalMinutes(0);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("monthly_goals")
+        .select("goal_minutes")
+        .eq("user_id", userId)
+        .eq("year", year)
+        .eq("month", month)
+        .single();
+      setGoalMinutes(data?.goal_minutes || 0);
+    };
+    fetchGoal();
+  }, [userId, period, selectedMonth, displayYear]);
+
   const displayDate = new Date(
     now.getFullYear(),
     now.getMonth() + monthOffset,
@@ -200,12 +421,11 @@ export default function DashboardPage() {
   });
 
   // 月別データ
-  const displayYear = now.getFullYear() + yearOffset;
+
   const monthlyData = Array.from({ length: 12 }, (_, i) => {
     const monthStart = `${displayYear}-${String(i + 1).padStart(2, "0")}-01`;
-    const monthEnd = new Date(displayYear, i + 1, 0)
-      .toISOString()
-      .split("T")[0];
+    const lastDate = new Date(displayYear, i + 1, 0);
+    const monthEnd = `${displayYear}-${String(i + 1).padStart(2, "0")}-${String(lastDate.getDate()).padStart(2, "0")}`;
     const isFuture =
       new Date(displayYear, i) > new Date(now.getFullYear(), now.getMonth());
     const isCurrentMonth =
@@ -247,12 +467,42 @@ export default function DashboardPage() {
     setSelectedWeekStart(null);
   };
 
+  const handleSaveGoal = async () => {
+    if (!userId) return;
+    const now = getNowJST();
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
+
+    if (selectedMonth !== null) {
+      year = displayYear;
+      month = selectedMonth + 1;
+    } else if (period === "lastMonth") {
+      const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      year = d.getFullYear();
+      month = d.getMonth() + 1;
+    }
+
+    const mins = Math.round(parseFloat(goalInput) * 60);
+    if (isNaN(mins) || mins <= 0) return;
+
+    await supabase.from("monthly_goals").upsert(
+      {
+        user_id: userId,
+        year,
+        month,
+        goal_minutes: mins,
+      },
+      { onConflict: "user_id,year,month" },
+    );
+    setGoalMinutes(mins);
+    setEditingGoal(false);
+  };
+
   const getFilteredRecords = () => {
     if (selectedMonth !== null) {
       const monthStart = `${displayYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`;
-      const monthEnd = new Date(displayYear, selectedMonth + 1, 0)
-        .toISOString()
-        .split("T")[0];
+      const lastDate = new Date(displayYear, selectedMonth + 1, 0);
+      const monthEnd = `${displayYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(lastDate.getDate()).padStart(2, "0")}`;
       return records.filter(
         (r) => r.study_date >= monthStart && r.study_date <= monthEnd,
       );
@@ -261,34 +511,29 @@ export default function DashboardPage() {
       const start = new Date(selectedWeekStart);
       const end = new Date(start);
       end.setDate(end.getDate() + 6);
-      const endStr = end.toISOString().split("T")[0];
+      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
       return records.filter(
         (r) => r.study_date >= selectedWeekStart && r.study_date <= endStr,
       );
     }
-    const n = new Date();
+    const n = getNowJST();
     if (period === "all") return records;
     if (period === "thisMonth") {
-      const firstDay = new Date(n.getFullYear(), n.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
+      const firstDay = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-01`;
       return records.filter((r) => r.study_date >= firstDay);
     }
     if (period === "lastMonth") {
-      const firstDay = new Date(n.getFullYear(), n.getMonth() - 1, 1)
-        .toISOString()
-        .split("T")[0];
-      const lastDay = new Date(n.getFullYear(), n.getMonth(), 0)
-        .toISOString()
-        .split("T")[0];
+      const lastMonthDate = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+      const firstDay = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}-01`;
+      const lastDate = new Date(n.getFullYear(), n.getMonth(), 0);
+      const lastDay = `${lastDate.getFullYear()}-${String(lastDate.getMonth() + 1).padStart(2, "0")}-${String(lastDate.getDate()).padStart(2, "0")}`;
       return records.filter(
         (r) => r.study_date >= firstDay && r.study_date <= lastDay,
       );
     }
     if (period === "last3Months") {
-      const firstDay = new Date(n.getFullYear(), n.getMonth() - 2, 1)
-        .toISOString()
-        .split("T")[0];
+      const threeMonthsAgo = new Date(n.getFullYear(), n.getMonth() - 2, 1);
+      const firstDay = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
       return records.filter((r) => r.study_date >= firstDay);
     }
     return records;
@@ -336,7 +581,29 @@ export default function DashboardPage() {
     });
   }
 
-  const recentRecords = filteredRecords.slice(0, 5);
+  // 目標達成率
+  const goalAchievePct =
+    goalMinutes > 0
+      ? Math.min(Math.round((totalMinutes / goalMinutes) * 100), 999)
+      : 0;
+  const goalAchievedMinutes = Math.min(totalMinutes, goalMinutes);
+  const remainMinutes = Math.max(goalMinutes - totalMinutes, 0);
+  const canShowGoal = period !== "all";
+
+  const getRemainingDays = () => {
+    if (period !== "thisMonth" && selectedMonth === null) return null;
+    const now = getNowJST();
+    if (selectedMonth !== null) {
+      const lastDay = new Date(displayYear, selectedMonth + 1, 0);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const target = new Date(displayYear, selectedMonth);
+      if (target < today) return null; // 過去月
+      return lastDay.getDate() - now.getDate();
+    }
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return lastDay.getDate() - now.getDate();
+  };
+  const remainingDays = getRemainingDays();
 
   const selectedWeekLabel =
     selectedWeekStart !== null
@@ -397,6 +664,7 @@ export default function DashboardPage() {
               onClick={() => {
                 setPeriod(p);
                 setSelectedWeekStart(null);
+                setSelectedMonth(null);
               }}
               className={clsx(
                 "flex-1 text-xs py-1.5 rounded-lg transition-colors font-medium",
@@ -816,107 +1084,142 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 円グラフ＋記録一覧 */}
+        {/* カテゴリー別＋目標達成率 */}
         <div className="grid md:grid-cols-2 gap-4 mb-4">
+          {/* カテゴリー別（PC：左カード、モバイル：タブ内） */}
           <div className="card">
-            <div className="mb-4">
-              <h2 className="text-sm font-semibold text-gray-700">
+            {/* モバイルのみタブ表示 */}
+            <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg mb-4 md:hidden">
+              <button
+                onClick={() => setChartTab("category")}
+                className={clsx(
+                  "flex-1 text-xs py-1.5 rounded-md transition-colors font-medium",
+                  chartTab === "category"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-gray-500",
+                )}
+              >
                 カテゴリー別
-              </h2>
-              <p className="text-xs text-indigo-500 mt-0.5 font-medium">
-                {sectionLabel}
-              </p>
+              </button>
+              <button
+                onClick={() => canShowGoal && setChartTab("goal")}
+                disabled={!canShowGoal}
+                className={clsx(
+                  "flex-1 text-xs py-1.5 rounded-md transition-colors font-medium",
+                  !canShowGoal
+                    ? "text-gray-300 cursor-not-allowed"
+                    : chartTab === "goal"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500",
+                )}
+              >
+                目標達成率
+              </button>
             </div>
-            {categoryStats.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">
-                まだ記録がありません
-              </p>
-            ) : (
-              <div onMouseDown={(e) => e.preventDefault()}>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={categoryStats}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="minutes"
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {categoryStats.map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => {
-                        const minutes = Number(value) || 0;
-                        return [
-                          `${Math.floor(minutes / 60)}h ${minutes % 60}m`,
-                          "学習時間",
-                        ];
-                      }}
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #F3F4F6",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Legend
-                      formatter={(value) => (
-                        <span style={{ fontSize: "12px", color: "#6B7280" }}>
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+
+            {/* PC：常にカテゴリー別 / モバイル：タブ選択時 */}
+            <div
+              className={clsx(
+                chartTab === "goal" ? "hidden md:block" : "block",
+              )}
+            >
+              <div className="mb-4">
+                <h2 className="text-sm font-semibold text-gray-700">
+                  カテゴリー別
+                </h2>
+                <p className="text-xs text-indigo-500 mt-0.5 font-medium">
+                  {sectionLabel}
+                </p>
               </div>
-            )}
+              {categoryStats.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">
+                  まだ記録がありません
+                </p>
+              ) : (
+                <div onMouseDown={(e) => e.preventDefault()}>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={categoryStats}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="minutes"
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        {categoryStats.map((entry, index) => (
+                          <Cell key={index} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => {
+                          const m = Number(value) || 0;
+                          return [
+                            `${Math.floor(m / 60)}h ${m % 60}m`,
+                            "学習時間",
+                          ];
+                        }}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "1px solid #F3F4F6",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Legend
+                        formatter={(value) => (
+                          <span style={{ fontSize: "12px", color: "#6B7280" }}>
+                            {value}
+                          </span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* モバイル：目標達成率タブ選択時 */}
+            <div
+              className={clsx(
+                chartTab === "goal" ? "block md:hidden" : "hidden",
+              )}
+            >
+              <GoalContent
+                sectionLabel={sectionLabel}
+                editingGoal={editingGoal}
+                setEditingGoal={setEditingGoal}
+                goalInput={goalInput}
+                setGoalInput={setGoalInput}
+                handleSaveGoal={handleSaveGoal}
+                goalMinutes={goalMinutes}
+                goalAchievePct={goalAchievePct}
+                goalAchievedMinutes={goalAchievedMinutes}
+                remainMinutes={remainMinutes}
+                remainingDays={remainingDays}
+                totalMinutes={totalMinutes}
+              />
+            </div>
           </div>
 
-          <div className="card">
-            <div className="mb-4">
-              <h2 className="text-sm font-semibold text-gray-700">
-                {selectedWeekLabel
-                  ? "週の記録"
-                  : `${periodLabels[period]}の記録`}
-              </h2>
-              <p className="text-xs text-indigo-500 mt-0.5 font-medium">
-                {sectionLabel}
-              </p>
-            </div>
-            {recentRecords.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">
-                まだ記録がありません
-              </p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {recentRecords.map((record) => (
-                  <div key={record.id} className="flex items-center gap-3">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor: record.categories?.color || "#9CA3AF",
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700 truncate">
-                        {record.content || "（メモなし）"}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {record.categories?.name || "カテゴリーなし"}
-                      </p>
-                    </div>
-                    <span className="text-sm text-gray-500 flex-shrink-0">
-                      {record.duration_minutes}分
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* PC：目標達成率（右カード） */}
+          <div className="card hidden md:block">
+            <GoalContent
+              sectionLabel={sectionLabel}
+              editingGoal={editingGoal}
+              setEditingGoal={setEditingGoal}
+              goalInput={goalInput}
+              setGoalInput={setGoalInput}
+              handleSaveGoal={handleSaveGoal}
+              goalMinutes={goalMinutes}
+              goalAchievePct={goalAchievePct}
+              goalAchievedMinutes={goalAchievedMinutes}
+              remainMinutes={remainMinutes}
+              remainingDays={remainingDays}
+              totalMinutes={totalMinutes}
+            />
           </div>
         </div>
       </div>
